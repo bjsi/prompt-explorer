@@ -3,7 +3,7 @@
   "id": "plugin_template",
   "name": "Plugin Template",
   "author": "remnote",
-  "repoUrl": "",
+  "repoUrl": "https://github.com/bjsi/prompt-explorer",
   "version": {
     "major": 0,
     "minor": 0,
@@ -16,7 +16,7 @@
   "requiredScopes": [
     {
       "type": "All",
-      "level": "Read"
+      "level": "ReadCreateModifyDelete"
     }
   ]
 }
