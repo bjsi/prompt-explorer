@@ -1,7 +1,9 @@
-import { declareIndexPlugin, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { declareIndexPlugin, filterAsync, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
 import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode } from '../lib/consts';
+import {updateWorkflowState} from '../lib/assigment';
+import {runWorkflow} from '../lib/workflow';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.app.registerPowerup(
@@ -11,7 +13,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     {
       // override global settings
       slots: [{
-        name: "postprocess",
+        name: "then",
         code: "postprocess",
         hidden: false,
       }]
@@ -36,6 +38,14 @@ async function onActivate(plugin: ReactRNPlugin) {
       slots: []
     }
   )
+
+  await plugin.app.registerCommand({
+    id: "workflow",
+    name: "workflow",
+    action: async () => {
+      runWorkflow(plugin);
+    }
+  })
 
   await plugin.settings.registerStringSetting({
     id: apiKeyId,

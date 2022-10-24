@@ -1,9 +1,28 @@
-import {BuiltInPowerupCodes, Rem, RNPlugin} from "@remnote/plugin-sdk";
-import {completionPowerupCode, promptPowerupCode} from "./consts";
+import {BuiltInPowerupCodes, filterAsync, Rem, RNPlugin} from "@remnote/plugin-sdk";
+import {completionPowerupCode, promptParamPowerupCode, promptPowerupCode} from "./consts";
 
-const getPostProcessorsFromPromptRem = async (plugin: RNPlugin, rem: Rem) => {
-  const rt = await rem?.getPowerupPropertyAsRichText(promptPowerupCode, "postprocess")
-  const fns = await plugin.richText.getRemIdsFromRichText(rt || [])
+// TODO: refactor
+const getTransformersFromPromptRem = async (plugin: RNPlugin, rem: Rem) => {
+  const postProcessors = (await rem?.getPowerupPropertyAsRichText(promptPowerupCode, "postprocess")) || []
+  if (postProcessors.length == 0) {
+    console.warn("post processors empty")
+  }
+  const transformers = await filterAsync(postProcessors, async (x) => {
+    if (x.i !== 'q') {
+      return false
+    }
+    else {
+      const rem = await plugin.rem.findOne(x._id);
+      // don't include assignments
+      if (rem?.text[0] === "Prompt Parameter") {
+        return false
+      }
+      else {
+        return true
+      }
+    }
+  })
+  const fns = await plugin.richText.getRemIdsFromRichText(transformers)
 
   const codes = []
   for (const fn of fns) {
@@ -19,12 +38,12 @@ const getPostProcessorsFromPromptRem = async (plugin: RNPlugin, rem: Rem) => {
   return codes;
 }
 
-export const evalPostProcesses = async (
+export const evalTransformers = async (
   plugin: RNPlugin,
   rem: Rem,
   x: string[],
 ) => {
-    const codes = await getPostProcessorsFromPromptRem(plugin, rem);
+    const codes = await getTransformersFromPromptRem(plugin, rem);
     for (const code of codes) {
 
       //
@@ -56,13 +75,7 @@ export const evalPostProcesses = async (
 
       let f = eval(code)
       let res = await f(x)
-      if (Array.isArray(res)) {
-        // TODO: move flat into postprocessors
-        x = res.flat()
-      }
-      else {
-        break;
-      }
+      x = res
     }
 
     return x

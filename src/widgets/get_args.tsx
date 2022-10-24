@@ -1,6 +1,5 @@
-import * as R from 'remeda';
-import { usePlugin, renderWidget, useRunAsync, WidgetLocation, useTracker, SelectionType, RichTextInterface, RichTextElementInterface, useSessionStorageState, RichText } from '@remnote/plugin-sdk';
-import {argsValuesStorageKey, getArgsPropsStorageKey} from '../lib/consts';
+import { usePlugin, renderWidget, useRunAsync, WidgetLocation, useSessionStorageState, } from '@remnote/plugin-sdk';
+import {argsValuesStorageKey } from '../lib/consts';
 import {PromptParam, } from '../lib/types';
 import React from 'react';
 import { insertArgumentsIntoPrompt } from '../lib/arguments';
@@ -8,12 +7,19 @@ import { insertArgumentsIntoPrompt } from '../lib/arguments';
 export const GetArgumentsModal = () => {
   const plugin = usePlugin();
   const ctx = useRunAsync(() => plugin.widget.getWidgetContext<WidgetLocation.Popup>(), [])
-  const [_, setArgValues] = useSessionStorageState<string[] | null>(argsValuesStorageKey, [])
-  const [inputValues, setInputValues] = React.useState<string[]>([]);
+  const [inputValues, setInputValues] = React.useState<Record<string, string>>({});
+  const [existingArgValues, setArgValues] = useSessionStorageState<Record<string, string> | null>(argsValuesStorageKey, {})
+  React.useEffect(() => {
+    if (existingArgValues && Object.keys(existingArgValues || {}).length > 0) {
+      setInputValues(existingArgValues || {})
+    }
+  }, [existingArgValues])
   const promptParams = ((ctx?.contextData.args || []) as PromptParam[]);
   const promptRichText = promptParams[0]?.promptRichText || [];
-  const previewPrompt = insertArgumentsIntoPrompt(promptRichText, inputValues, promptParams)
-  const previewPromptText = useRunAsync(async () => await plugin.richText.toString(previewPrompt), [previewPrompt])
+  const previewPrompt = useRunAsync(async () => await insertArgumentsIntoPrompt(plugin, promptRichText, inputValues), [promptRichText, inputValues, promptParams])
+  const previewPromptText = useRunAsync(async () => await plugin.richText.toString(previewPrompt || []), [previewPrompt])
+
+  console.log(existingArgValues)
 
   return (
     <div className="p-2">
@@ -30,12 +36,11 @@ export const GetArgumentsModal = () => {
             arg.name
           }
           <input
-            value={inputValues[idx]}
-            onChange={e => setInputValues(last => {
-              const newArr = [...last]
-              newArr[idx] = e.target.value
-              return newArr
-            })}
+            value={inputValues[arg.name]}
+            onChange={e => {
+              const newValue = {...inputValues, [arg.name]: e.target.value}
+              setInputValues(newValue);
+            }}
           />
         </div>
       )
