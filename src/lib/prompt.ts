@@ -1,6 +1,8 @@
 import {Rem, RNPlugin} from "@remnote/plugin-sdk"
-import {getPromptArguments, insertArgumentsIntoPrompt} from "./arguments"
-import {completionPowerupCode, promptPowerupCode} from "./consts"
+import {getPromptArguments, getRequiredPromptArgs, insertArgumentsIntoPrompt} from "./arguments"
+import {updateState} from "./assigment"
+import {completionPowerupCode, promptPowerupCode, testInputCode} from "./consts"
+import {createInstanceOfGenericPrompt} from "./generic"
 import {complete} from "./gpt"
 import {getParametersFromPromptRem} from "./parameters"
 import {evalTransformers} from "./postprocess"
@@ -10,7 +12,22 @@ export const getPromptRichText = async (plugin: RNPlugin, rem: Rem) => {
   return rem.text[0]?._id ? (await plugin.rem.findOne(rem.text[0]._id))!.text : rem.text;
 }
 
-export const runPrompt = async (plugin: RNPlugin, rem: Rem, state: Record<string, string> = {}) => {
+export interface RunPromptOptions {
+  dontAskForArgs?: boolean;
+  isCommandCallback?: boolean;
+}
+
+export interface PromptOutput {
+  args: Record<string, string>
+  result: string[]
+}
+
+export const runPrompt = async (
+  plugin: RNPlugin,
+  rem: Rem,
+  state: Record<string, string> = {},
+  opts: RunPromptOptions = {}
+): Promise<PromptOutput | undefined> => {
   const completePowerup = await plugin.powerup.getPowerupByCode(completionPowerupCode)
   const promptPowerup = await plugin.powerup.getPowerupByCode(promptPowerupCode)
   if (!completePowerup || !promptPowerup) {
@@ -18,25 +35,45 @@ export const runPrompt = async (plugin: RNPlugin, rem: Rem, state: Record<string
     return
   }
   const promptRichText = await getPromptRichText(plugin, rem);
-  const promptParams = await getParametersFromPromptRem(plugin, rem);
   let finalPromptRichText = [...promptRichText];
-  let promptArgs = {...state};
-  if (promptParams.length > 0) {
-    promptArgs = {...state, ...await getPromptArguments(plugin, promptParams, state)}
-    if (promptArgs != null) {
-      finalPromptRichText = await insertArgumentsIntoPrompt(plugin, finalPromptRichText, promptArgs);
+  // need !opts.dontAskForArgs to avoid potential infinite loop?
+  const isGeneric = !opts.dontAskForArgs && (await getParametersFromPromptRem(plugin, rem)).length > 0;
+  const promptArgs = opts.dontAskForArgs
+    ? state
+    : await getRequiredPromptArgs(plugin, rem, state)
+  if (promptArgs != null) {
+    finalPromptRichText = await insertArgumentsIntoPrompt(plugin, finalPromptRichText, promptArgs);
+  }
+  const testInput = await rem.getPowerupProperty(promptPowerupCode, testInputCode)
+  let res;
+  if (testInput) {
+    res = {
+      result: await evalTransformers(plugin, rem, [testInput]),
+      args: promptArgs
+    }
+  }
+  else {
+    if (isGeneric && !testInput && !opts.isCommandCallback) {
+      const instance = await createInstanceOfGenericPrompt(
+        plugin,
+        rem,
+        finalPromptRichText,
+        promptArgs,
+      )
+      return await runPrompt(plugin, instance, state, opts)
     }
     else {
-      return;
+      const textPrompt = await plugin.richText.toString(finalPromptRichText);
+      const completion = await complete(plugin, textPrompt, rem._id)
+      if (!completion) {
+        return
+      }
+      res = {
+        result: await evalTransformers(plugin, rem, [completion]),
+        args: promptArgs
+      }
     }
   }
-  const textPrompt = await plugin.richText.toString(finalPromptRichText);
-  const res = await complete(plugin, textPrompt, rem._id)
-  if (!res) {
-    return
-  }
-  return {
-    result: await evalTransformers(plugin, rem, [res]),
-    args: promptArgs
-  }
+
+  return {...res, args: await updateState(plugin, rem, res.result, res.args)}
 }

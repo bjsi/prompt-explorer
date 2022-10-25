@@ -1,7 +1,7 @@
 import {Rem, RichTextElementRemInterface, RNPlugin} from "@remnote/plugin-sdk";
 import {promptParamPowerupCode, promptPowerupCode} from "./consts";
 
-export const updateWorkflowState = async (
+export const updateState = async (
   plugin: RNPlugin,
   promptRem: Rem,
   output: unknown,

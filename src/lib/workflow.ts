@@ -1,5 +1,5 @@
 import {filterAsync, RNPlugin} from "@remnote/plugin-sdk";
-import {updateWorkflowState} from "./assigment";
+import {updateState} from "./assigment";
 import {promptPowerupCode} from "./consts";
 import {runPrompt} from "./prompt";
 
@@ -12,7 +12,7 @@ export const runWorkflow = async (plugin: RNPlugin) => {
     const output = await runPrompt(plugin, promptRem, state)
     if (output) {
       const {result, args} = output
-      state = await updateWorkflowState(plugin, promptRem, result, args);
+      state = await updateState(plugin, promptRem, result, args);
     }
   }
 }

@@ -1,8 +1,7 @@
-import { declareIndexPlugin, filterAsync, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { declareIndexPlugin, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
-import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode } from '../lib/consts';
-import {updateWorkflowState} from '../lib/assigment';
+import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, thenSlotCode } from '../lib/consts';
 import {runWorkflow} from '../lib/workflow';
 
 async function onActivate(plugin: ReactRNPlugin) {
@@ -14,8 +13,13 @@ async function onActivate(plugin: ReactRNPlugin) {
       // override global settings
       slots: [{
         name: "then",
-        code: "postprocess",
+        code: thenSlotCode,
         hidden: false,
+      },
+      {
+        name: "test input",
+        code: testInputCode,
+        hidden: false
       }]
     }
   )
@@ -69,7 +73,16 @@ async function onActivate(plugin: ReactRNPlugin) {
     {
       dimensions: { height: 'auto', width: 'auto' },
     }
-  )
+  );
+
+  await plugin.app.registerWidget(
+    "test_input",
+    WidgetLocation.UnderRemEditor,
+    {
+      dimensions: { height: 'auto', width: '100%' },
+      powerupFilter: promptPowerupCode,
+    }
+  );
 }
 
 async function onDeactivate(_: ReactRNPlugin) {}

@@ -1,6 +1,9 @@
-import { AppEvents, RichTextElementInterface, RNPlugin } from "@remnote/plugin-sdk";
+import { AppEvents, Rem, RichTextElementInterface, RNPlugin } from "@remnote/plugin-sdk";
 import { argsValuesStorageKey } from "./consts";
+import {getParametersFromPromptRem} from "./parameters";
+import {getPromptRichText} from "./prompt";
 import { PromptParam } from "./types";
+
 
 export const insertArgumentsIntoPrompt = async (
     plugin: RNPlugin,
@@ -49,4 +52,18 @@ export const getPromptArguments = async (plugin: RNPlugin, params: PromptParam[]
     });
 
     return args
+}
+
+export const getRequiredPromptArgs = async (
+  plugin: RNPlugin,
+  rem: Rem,
+  state: Record<string, string>,
+) => {
+  const promptParams = await getParametersFromPromptRem(plugin, rem);
+  if (promptParams.length > 0) {
+    return {...state, ...await getPromptArguments(plugin, promptParams, state)}
+  }
+  else {
+    return {...state}
+  }
 }
