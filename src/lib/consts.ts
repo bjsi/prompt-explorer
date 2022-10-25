@@ -6,3 +6,4 @@ export const argsValuesStorageKey = 'args-storage'
 export const getArgsPropsStorageKey = 'get-args-props'
 export const thenSlotCode = 'postprocess'
 export const testInputCode = "test-input";
+export const commandCode = "test-input";

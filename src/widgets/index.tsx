@@ -5,6 +5,16 @@ import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCo
 import {runWorkflow} from '../lib/workflow';
 
 async function onActivate(plugin: ReactRNPlugin) {
+  // await plugin.app.registerPowerup(
+  //   'Worflow',
+    
+  //   "GPT-3 Generic Prompt Parameter",
+  //   {
+  //     slots: []
+  //   }
+  // )
+
+
   await plugin.app.registerPowerup(
     'Prompt',
     promptPowerupCode,
@@ -17,7 +27,7 @@ async function onActivate(plugin: ReactRNPlugin) {
         hidden: false,
       },
       {
-        name: "test input",
+        name: "input",
         code: testInputCode,
         hidden: false
       }]
@@ -58,14 +68,14 @@ async function onActivate(plugin: ReactRNPlugin) {
     defaultValue: '',
   });
 
-  await plugin.app.registerWidget(
-    'prompt_controls',
-    WidgetLocation.RightSideOfEditor,
-    {
-      dimensions: { height: 'auto', width: '100px' },
-      powerupFilter: promptPowerupCode,
-    }
-  );
+  // await plugin.app.registerWidget(
+  //   'prompt_controls',
+  //   WidgetLocation.RightSideOfEditor,
+  //   {
+  //     dimensions: { height: 'auto', width: '100px' },
+  //     powerupFilter: promptPowerupCode,
+  //   }
+  // );
 
   await plugin.app.registerWidget(
     "get_args",

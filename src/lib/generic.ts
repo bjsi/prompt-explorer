@@ -21,7 +21,8 @@ export const createInstanceOfGenericPrompt = async (
     }
   }
   await rem?.setParent(genericPromptRem, 99999999)
-  return rem;
+  // refind because .text is cached on the rem object
+  return await plugin.rem.findOne(rem?._id);
 }
 
 export const createInstanceOfGenericWorkflow = async (

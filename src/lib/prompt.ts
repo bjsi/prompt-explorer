@@ -42,11 +42,12 @@ export const runPrompt = async (
     ? state
     : await getRequiredPromptArgs(plugin, rem, state)
   if (promptArgs != null) {
-    finalPromptRichText = await insertArgumentsIntoPrompt(plugin, finalPromptRichText, promptArgs);
+    finalPromptRichText = await insertArgumentsIntoPrompt(plugin, finalPromptRichText, { ...state, ...promptArgs });
   }
   const testInput = await rem.getPowerupProperty(promptPowerupCode, testInputCode)
   let res;
   if (testInput) {
+    console.log("Running prompt in test mode")
     res = {
       result: await evalTransformers(plugin, rem, [testInput]),
       args: promptArgs
@@ -60,11 +61,12 @@ export const runPrompt = async (
         finalPromptRichText,
         promptArgs,
       )
-      return await runPrompt(plugin, instance, state, opts)
+      return await runPrompt(plugin, instance, promptArgs, opts)
     }
     else {
       const textPrompt = await plugin.richText.toString(finalPromptRichText);
       const completion = await complete(plugin, textPrompt, rem._id)
+      console.log(completion)
       if (!completion) {
         return
       }

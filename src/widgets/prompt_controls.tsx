@@ -18,9 +18,11 @@ export const PromptControls = () => {
       <div
         className="px-2  rounded-md rn-clr-background-light-positive rn-clr-content-positive"
         onClick={async () => {
-          if (rem) {
+          if (rem) { 
             setLoading(true)
-            await runPrompt(plugin, rem);
+            // maybe I was facing .text caching issue?
+            const theRem = await plugin.rem.findOne(rem._id)!
+            await runPrompt(plugin, theRem);
             setLoading(false)
           }
         }}

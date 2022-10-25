@@ -9,6 +9,7 @@ export const runWorkflow = async (plugin: RNPlugin) => {
   const promptRems = (await filterAsync(children, child => child.hasPowerup(promptPowerupCode)));
   let state = {}
   for (const promptRem of promptRems) {
+    debugger
     const output = await runPrompt(plugin, promptRem, state)
     if (output) {
       const {result, args} = output
