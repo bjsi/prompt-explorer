@@ -27,7 +27,11 @@ export const insertArgumentsIntoPrompt = async (
 // convoluted way of getting arguments for the prompt from the user by opening a modal
 // and resolving a promise with what the user writes.
 
-export const getPromptArguments = async (plugin: RNPlugin, params: PromptParam[], state: Record<string, string>) => {
+export const getPromptArguments = async (
+  plugin: RNPlugin,
+  params: PromptParam[],
+  state: Record<string, string>
+) => {
     let resolve: ((args: Record<string, string> | null) => void) | undefined;
     const handleUserConfirmedArgs = (newVal: Record<string, string> | null) => {
         if (newVal && Object.keys(newVal).length > 0) {
@@ -43,6 +47,9 @@ export const getPromptArguments = async (plugin: RNPlugin, params: PromptParam[]
             plugin.widget.closePopup();
         }
     }
+
+    const paramsWithoutArgs = params.filter(param => state[param.name] == null)
+    if (paramsWithoutArgs.length === 0) return state;
 
     const args = await new Promise<Record<string, string> | null>(async (res) => {
         resolve = res

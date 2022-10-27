@@ -1,5 +1,5 @@
 import {Rem, RNPlugin} from "@remnote/plugin-sdk"
-import {getPromptArguments, getRequiredPromptArgs, insertArgumentsIntoPrompt} from "./arguments"
+import {getRequiredPromptArgs, insertArgumentsIntoPrompt} from "./arguments"
 import {updateState} from "./assigment"
 import {completionPowerupCode, promptPowerupCode, testInputCode} from "./consts"
 import {createInstanceOfGenericPrompt} from "./generic"
@@ -9,7 +9,8 @@ import {evalTransformers} from "./postprocess"
 
 export const getPromptRichText = async (plugin: RNPlugin, rem: Rem) => {
   // deal with aliases - cleaner way?
-  return rem.text[0]?._id ? (await plugin.rem.findOne(rem.text[0]._id))!.text : rem.text;
+  const rt = rem.text[0]?._id ? (await plugin.rem.findOne(rem.text[0]._id))!.text : rem.text
+  return await plugin.richText.trim(rt);
 }
 
 export interface RunPromptOptions {
@@ -71,7 +72,7 @@ export const runPrompt = async (
         return
       }
       res = {
-        result: await evalTransformers(plugin, rem, [completion]),
+        result: await evalTransformers(plugin, rem, [completion], opts),
         args: promptArgs
       }
     }

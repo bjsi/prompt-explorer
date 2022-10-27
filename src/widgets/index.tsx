@@ -1,18 +1,21 @@
 import { declareIndexPlugin, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
-import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, thenSlotCode } from '../lib/consts';
-import {runWorkflow} from '../lib/workflow';
+import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, afterSlotCode, workflowCode, beforeSlotCode } from '../lib/consts';
+import {getWorkflowPrompts, runWorkflow} from '../lib/workflow';
+import {runPrompt} from '../lib/prompt';
+import {useSelectionAsFirstParameter} from '../lib/parameters';
+import * as R from 'remeda';
 
 async function onActivate(plugin: ReactRNPlugin) {
-  // await plugin.app.registerPowerup(
-  //   'Worflow',
-    
-  //   "GPT-3 Generic Prompt Parameter",
-  //   {
-  //     slots: []
-  //   }
-  // )
+  await plugin.app.registerPowerup(
+    'Workflow',
+    workflowCode,
+    "Register prompt chain as a workflow",
+    {
+      slots: []
+    }
+  )
 
 
   await plugin.app.registerPowerup(
@@ -21,9 +24,15 @@ async function onActivate(plugin: ReactRNPlugin) {
     "GPT-3 Prompt Powerup",
     {
       // override global settings
-      slots: [{
-        name: "then",
-        code: thenSlotCode,
+      slots: [
+      {
+        name: "after",
+        code: afterSlotCode,
+        hidden: false,
+      },
+      {
+        name: "before",
+        code: beforeSlotCode,
         hidden: false,
       },
       {
@@ -52,13 +61,39 @@ async function onActivate(plugin: ReactRNPlugin) {
       slots: []
     }
   )
+  
+  const runPromptCommand = async (n: number) => {
+    const focusedRem = await plugin.focus.getFocusedRem();
+    if (!focusedRem) return;
+    const isWorkflow = await focusedRem?.hasPowerup(workflowCode);
+    let state = {}
+    if (isWorkflow) {
+      const firstPrompt = (await getWorkflowPrompts(focusedRem))[0];
+      state = await useSelectionAsFirstParameter(plugin, firstPrompt);
+    }
+    else {
+      state = await useSelectionAsFirstParameter(plugin, focusedRem);
+    }
+    
+    const runs = R.range(0, n).map(_ =>
+      isWorkflow
+        ? runWorkflow(plugin, focusedRem, state)
+        : runPrompt(plugin, focusedRem, state)
+    )
+
+    await Promise.all(runs)
+  }
 
   await plugin.app.registerCommand({
-    id: "workflow",
-    name: "workflow",
-    action: async () => {
-      runWorkflow(plugin);
-    }
+    id: "run-prompt",
+    name: "Run Prompt",
+    action: () => runPromptCommand(1),
+  })
+
+  await plugin.app.registerCommand({
+    id: "run-prompt-3",
+    name: "Run Prompt x3",
+    action: () => runPromptCommand(3),
   })
 
   await plugin.settings.registerStringSetting({
@@ -68,14 +103,14 @@ async function onActivate(plugin: ReactRNPlugin) {
     defaultValue: '',
   });
 
-  // await plugin.app.registerWidget(
-  //   'prompt_controls',
-  //   WidgetLocation.RightSideOfEditor,
-  //   {
-  //     dimensions: { height: 'auto', width: '100px' },
-  //     powerupFilter: promptPowerupCode,
-  //   }
-  // );
+  await plugin.app.registerWidget(
+    'completion_controls',
+    WidgetLocation.RightSideOfEditor,
+    {
+      dimensions: { height: 'auto', width: '100px' },
+      powerupFilter: completionPowerupCode,
+    }
+  );
 
   await plugin.app.registerWidget(
     "get_args",
@@ -93,6 +128,32 @@ async function onActivate(plugin: ReactRNPlugin) {
       powerupFilter: promptPowerupCode,
     }
   );
+
+  plugin.track(async (reactivePlugin) => {
+    const pw = await reactivePlugin.powerup.getPowerupByCode(workflowCode)!;
+    const workflows = (await pw?.taggedRem()) || [];
+    for (const workflow of workflows) {
+      const name = await plugin.richText.toString(workflow.text);
+      const action = async () => {
+        const rem = await plugin.rem.findOne(workflow._id);
+        const firstPrompt = (await getWorkflowPrompts(rem))[0];
+        const state = await useSelectionAsFirstParameter(plugin, firstPrompt);
+        if (!rem?.hasPowerup(workflowCode)) {
+          // TODO: auto un-register.
+          console.log("Not a workflow... Maybe you removed the powerup from the workflow rem?")
+          return;
+        }
+        if (rem) {
+          await runWorkflow(plugin, rem, state, {isCommandCallback: true})
+        }
+      }
+      plugin.app.registerCommand({
+        id: name,
+        name,
+        action,
+      })
+    }
+  })
 }
 
 async function onDeactivate(_: ReactRNPlugin) {}

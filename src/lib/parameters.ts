@@ -1,4 +1,4 @@
-import { BuiltInPowerupCodes, filterAsync, Rem, RNPlugin } from "@remnote/plugin-sdk";
+import { BuiltInPowerupCodes, filterAsync, Rem, RNPlugin, SelectionType } from "@remnote/plugin-sdk";
 import {getPromptRichText} from "./prompt";
 import { PromptParam } from "./types";
 
@@ -28,4 +28,21 @@ export const getParametersFromPromptRem = async (
       })
     }
     return ret;
+}
+
+export const useSelectionAsFirstParameter = async (
+  plugin: RNPlugin,
+  promptRem: Rem
+): Promise<Record<string, string>> => {
+  const sel = await plugin.editor.getSelection();
+  const state: Record<string, string> = {}
+  if (sel && sel.type == SelectionType.Text && sel.range.start != sel.range.end) {
+    const selText = await plugin.richText.toString(sel.richText)
+    const params = await getParametersFromPromptRem(plugin, promptRem);
+    const fstParam = params[0];
+    if (fstParam) {
+      state[fstParam.name] = selText
+    }
+  }
+  return state;
 }
