@@ -21,6 +21,6 @@ export const createInstanceOfGenericPrompt = async (
     }
   }
   await rem?.setParent(genericPromptRem, 99999999)
-  // refind because .text is cached on the rem object
-  return await plugin.rem.findOne(rem?._id);
+  // TODO: refind because .text is cached on the rem object, very bug prone
+  return (await plugin.rem.findOne(rem?._id))!;
 }

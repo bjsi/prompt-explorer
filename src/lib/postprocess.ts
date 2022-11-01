@@ -19,10 +19,10 @@ export const isPromptParameter = async (plugin: RNPlugin, remId: string) => {
   const rem = await plugin.rem.findOne(remId);
   // don't include assignments
   if (rem?.text[0] === "Prompt Parameter") {
-    return false
+    return true
   }
   else {
-    return true
+    return false
   }
 }
 

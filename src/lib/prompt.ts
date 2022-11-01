@@ -6,6 +6,7 @@ import {createInstanceOfGenericPrompt} from "./generic"
 import {complete} from "./gpt"
 import {getParametersFromPromptRem} from "./parameters"
 import {evalTransformers} from "./postprocess"
+import {evalPreprocessors} from "./preprocess"
 
 export const getPromptRichText = async (plugin: RNPlugin, rem: Rem) => {
   // deal with aliases - cleaner way?
@@ -38,7 +39,7 @@ export const runPrompt = async (
   }
   const promptRichText = await getPromptRichText(plugin, rem);
   let finalPromptRichText = [...promptRichText];
-  state = {...state, ...runBefore}
+  state = {...state, ...await evalPreprocessors(plugin, rem, state)}
 
   // need !opts.dontAskForArgs to avoid potential infinite loop?
   const isGeneric = !opts.dontAskForArgs && (await getParametersFromPromptRem(plugin, rem)).length > 0;

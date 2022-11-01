@@ -74,7 +74,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     else {
       state = await useSelectionAsFirstParameter(plugin, focusedRem);
     }
-    
+
     const runs = R.range(0, n).map(_ =>
       isWorkflow
         ? runWorkflow(plugin, focusedRem, state)

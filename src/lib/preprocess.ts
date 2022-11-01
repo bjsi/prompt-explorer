@@ -64,7 +64,7 @@ const getAllPreProcessComputations = async (plugin: RNPlugin, rem: Rem) => {
 }
 
 // idea: each pre process step gets evaluated and updates the state with some assignment at the end
-const evalPreprocessors = async (
+export const evalPreprocessors = async (
   plugin: RNPlugin,
   rem: Rem,
   state: Record<string, any> = {},
@@ -78,13 +78,19 @@ const evalPreprocessors = async (
       if (step.type == "code") {
         
         // Add special pre process fns here
+        async function focusedDocumentTitle() {
+          // TODO: wrong
+          return await plugin.richText.toString(
+            (await plugin.focus.getFocusedPortal())?.text || []
+          );
+        }
 
         let f = eval(step.text)
         let newRes = await f(lastRes)
         lastRes = newRes
       }
       else {
-        state[step.text] = lastRes
+        newState[step.text] = lastRes
       }
 
       if (i == computation.length -1 ) {

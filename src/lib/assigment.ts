@@ -4,8 +4,8 @@ import {promptParamPowerupCode, promptPowerupCode} from "./consts";
 const assignToStateVar = async (
   plugin: RNPlugin,
   rt: RichTextElementRemInterface,
-  value: string,
-  state: Record<string, string>
+  value: unknown,
+  state: Record<string, unknown>
 ) => {
   const q = await plugin.rem.findOne(rt._id)
   const pw = await plugin.powerup.getPowerupByCode(promptParamPowerupCode)

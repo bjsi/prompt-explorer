@@ -20,8 +20,7 @@ export const PromptControls = () => {
         onClick={async () => {
           if (rem) { 
             setLoading(true)
-            // maybe I was facing .text caching issue?
-            const theRem = await plugin.rem.findOne(rem._id)!
+            const theRem = (await plugin.rem.findOne(rem._id))!
             await runPrompt(plugin, theRem);
             setLoading(false)
           }
