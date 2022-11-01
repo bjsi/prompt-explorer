@@ -1,22 +1,34 @@
 import {filterAsync, Rem, RichTextElementRemInterface, RNPlugin} from "@remnote/plugin-sdk";
 import {promptPowerupCode} from "./consts";
-import {filterTransformers, getCodeFromTransformer, isPromptParameter} from "./postprocess";
+import {getCodeFromTransformer, isPromptParameter} from "./postprocess";
 import * as R from 'remeda';
 
 export const fallbackPreProcessors = [
 ]
 
-const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementRemInterface) => {
+interface Assignment {
+  type: 'assignment';
+  text: string;
+}
+
+interface Code {
+  type: 'code';
+  text: string;
+}
+
+const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementRemInterface): Promise<Assignment | Code | undefined> => {
   if (await isPromptParameter(plugin, x._id)) {
     return {
       type: 'assignment',
-      text: (await plugin.rem.findOne(x.aliasId))!.text[0],
+      text: (await plugin.rem.findOne(x.aliasId))!.text[0] as string,
     }
   }
   else {
+    const code = await getCodeFromTransformer(plugin, x._id)
+    if (!code) return undefined
     return {
       type: 'code',
-      text: getCodeFromTransformer(plugin, x._id)
+      text: code
     }
   }
 }
@@ -27,35 +39,58 @@ const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementRemInterfa
 // - before --
 //  - `getConceptName` => [[title]]
 //  - `getConceptDefinition` => [[definition]]
-const getAllPreProcessors = async (plugin: RNPlugin, rem: Rem) => {
-  let allPPs = 
+// return [[]] of pre-processors
+const getAllPreProcessComputations = async (plugin: RNPlugin, rem: Rem) => {
+  const allPPs = 
     ((await rem?.getPowerupPropertyAsRichText(promptPowerupCode, "before")) || [])
      .filter(x => x.i == 'q') as RichTextElementRemInterface[]
-
-  if (allPPs.length == 0) {
-    // TODO: lazy
-    const slot = (await rem.getChildrenRem()).find(x => x.text[0] === 'before');
-    const stepRems = await filterAsync((await slot?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
-    const x = await Promise.all(
-      stepRems
-        .map(x => (x.text.filter(x => x.i === 'q') as RichTextElementRemInterface[])
-        .map(x => mapToProcessorType(plugin, x)))
-    )
+  if (allPPs.length > 0) {
+    const preProcessComputation = await Promise.all(allPPs.map(x => mapToProcessorType(plugin, x)))
+    return [R.compact(preProcessComputation)];
   }
   else {
-    return allPPs.map(x => mapToProcessorType(plugin, ))
+    // TODO: lazy
+    const slot = (await rem.getChildrenRem()).find(x => x.text[0] === 'before');
+    const preProcessComputationRems = await filterAsync((await slot?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
+    const preProcessComputations: (Assignment | Code)[][] = []
+    for (const preProcessComputationRem of preProcessComputationRems) {
+      const preProcessComputation = R.compact(
+        await Promise.all((preProcessComputationRem.text.filter(x => x.i === 'q') as RichTextElementRemInterface[]).map(x => mapToProcessorType(plugin, x))
+      ));
+      preProcessComputations.push(preProcessComputation);
+    }
+    return preProcessComputations;
   }
 }
 
-const evalPreprocessors = async (plugin: RNPlugin, rem: Rem, state:Record<string, any> = {}) => {
-  const allPPs = await getAllPreProcessors(rem)
-  const _eval = async () => {
+// idea: each pre process step gets evaluated and updates the state with some assignment at the end
+const evalPreprocessors = async (
+  plugin: RNPlugin,
+  rem: Rem,
+  state: Record<string, any> = {},
+) => {
+  const newState = {...state};
+  const allPreProcessCompuations = await getAllPreProcessComputations(plugin, rem)
+  for (const computation of allPreProcessCompuations) {
+    let lastRes: any = undefined
+    for (let i = 0; i < computation.length; i++) {
+      const step = computation[i];
+      if (step.type == "code") {
+        
+        // Add special pre process fns here
+
+        let f = eval(step.text)
+        let newRes = await f(lastRes)
+        lastRes = newRes
+      }
+      else {
+        state[step.text] = lastRes
+      }
+
+      if (i == computation.length -1 ) {
+        lastRes = undefined;
+      }
+    }
   }
-  if (allPPs[0]?.constructor === Array)) {
-    for 
-  }
-  let codes = await filterTransformers (plugin, allPPs);
-  if (allPPs.length === 0) {
-    codes = fallbackPreProcessors;
-  }
+  return newState;
 }
