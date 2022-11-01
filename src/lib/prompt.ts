@@ -1,4 +1,4 @@
-import {Rem, RNPlugin} from "@remnote/plugin-sdk"
+import {Rem, RemId, RNPlugin} from "@remnote/plugin-sdk"
 import {getRequiredPromptArgs, insertArgumentsIntoPrompt} from "./arguments"
 import {updateState} from "./assigment"
 import {completionPowerupCode, promptPowerupCode, testInputCode} from "./consts"
@@ -16,6 +16,7 @@ export const getPromptRichText = async (plugin: RNPlugin, rem: Rem) => {
 export interface RunPromptOptions {
   dontAskForArgs?: boolean;
   isCommandCallback?: boolean;
+  focusedRemId?: RemId
 }
 
 export interface PromptOutput {
@@ -37,6 +38,8 @@ export const runPrompt = async (
   }
   const promptRichText = await getPromptRichText(plugin, rem);
   let finalPromptRichText = [...promptRichText];
+  state = {...state, ...runBefore}
+
   // need !opts.dontAskForArgs to avoid potential infinite loop?
   const isGeneric = !opts.dontAskForArgs && (await getParametersFromPromptRem(plugin, rem)).length > 0;
   const promptArgs = opts.dontAskForArgs

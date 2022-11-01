@@ -1,4 +1,4 @@
-import { declareIndexPlugin, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { declareIndexPlugin, filterAsync, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
 import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, afterSlotCode, workflowCode, beforeSlotCode } from '../lib/consts';
@@ -84,6 +84,38 @@ async function onActivate(plugin: ReactRNPlugin) {
     await Promise.all(runs)
   }
 
+  // await plugin.app.registerCommand({
+  //   id: "auto-branch",
+  //   name: "Auto Branch",
+  //   action: () => {
+  //   }
+  // })
+
+  await plugin.app.registerCommand({
+    id: "extend-cdf",
+    name: "Extend CDF",
+    description: "Extend CDF",
+    action: async () => {
+      const focusedRem = await plugin.focus.getFocusedRem();
+      const x = await filterAsync((await focusedRem?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
+      console.log(x);
+    }
+  })
+
+  await plugin.app.registerCommand({
+    id: "branch",
+    name: "Branch",
+    description: "Creates a clone of the currently focused Rem as a sibling",
+    action: async () => {
+      const rem = await plugin.focus.getFocusedRem();
+      const idx = await rem?.positionAmongstSiblings();
+      if (!rem || idx == null) return;
+      const newRem = await plugin.rem.createRem();
+      await newRem?.setParent(rem.parent, idx + 1)
+      await newRem?.setText(rem.text);
+    }
+  })
+
   await plugin.app.registerCommand({
     id: "run-prompt",
     name: "Run Prompt",
@@ -135,6 +167,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     for (const workflow of workflows) {
       const name = await plugin.richText.toString(workflow.text);
       const action = async () => {
+        const focusedRem = await plugin.focus.getFocusedRem();
         const rem = await plugin.rem.findOne(workflow._id);
         const firstPrompt = (await getWorkflowPrompts(rem))[0];
         const state = await useSelectionAsFirstParameter(plugin, firstPrompt);
@@ -144,7 +177,7 @@ async function onActivate(plugin: ReactRNPlugin) {
           return;
         }
         if (rem) {
-          await runWorkflow(plugin, rem, state, {isCommandCallback: true})
+          await runWorkflow(plugin, rem, state, {isCommandCallback: true, focusedRemId: focusedRem?._id})
         }
       }
       plugin.app.registerCommand({
