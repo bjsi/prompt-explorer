@@ -40,6 +40,8 @@ export const runPrompt = async (
   const promptRichText = await getPromptRichText(plugin, rem);
   let finalPromptRichText = [...promptRichText];
   state = {...state, ...await evalPreprocessors(plugin, rem, state)}
+  console.log(state);
+  return
 
   // need !opts.dontAskForArgs to avoid potential infinite loop?
   const isGeneric = !opts.dontAskForArgs && (await getParametersFromPromptRem(plugin, rem)).length > 0;

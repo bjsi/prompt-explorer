@@ -1,5 +1,5 @@
 import {filterAsync, Rem, RichTextElementRemInterface, RNPlugin} from "@remnote/plugin-sdk";
-import {promptPowerupCode} from "./consts";
+import {beforeSlotCode, promptPowerupCode} from "./consts";
 import {getCodeFromTransformer, isPromptParameter} from "./postprocess";
 import * as R from 'remeda';
 
@@ -33,13 +33,6 @@ const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementRemInterfa
   }
 }
 
-// TODO: can be either a list
-// - before -- `getArticleTitle` => [[title]]
-// or a nested list of multiple assignments
-// - before --
-//  - `getConceptName` => [[title]]
-//  - `getConceptDefinition` => [[definition]]
-// return [[]] of pre-processors
 const getAllPreProcessComputations = async (plugin: RNPlugin, rem: Rem) => {
   const allPPs = 
     ((await rem?.getPowerupPropertyAsRichText(promptPowerupCode, "before")) || [])
@@ -49,8 +42,11 @@ const getAllPreProcessComputations = async (plugin: RNPlugin, rem: Rem) => {
     return [R.compact(preProcessComputation)];
   }
   else {
-    // TODO: lazy
-    const slot = (await rem.getChildrenRem()).find(x => x.text[0] === 'before');
+    const s = await plugin.powerup.getPowerupSlotByCode(promptPowerupCode, beforeSlotCode);
+    if (!s) {
+      return [];
+    }
+    const slot = (await rem.getChildrenRem()).find(x => x.text[0]?._id === s._id);
     const preProcessComputationRems = await filterAsync((await slot?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
     const preProcessComputations: (Assignment | Code)[][] = []
     for (const preProcessComputationRem of preProcessComputationRems) {
@@ -78,7 +74,7 @@ export const evalPreprocessors = async (
       if (step.type == "code") {
         
         // Add special pre process fns here
-        async function focusedDocumentTitle() {
+        async function docTitle() {
           // TODO: wrong
           return await plugin.richText.toString(
             (await plugin.focus.getFocusedPortal())?.text || []

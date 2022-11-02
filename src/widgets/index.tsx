@@ -96,9 +96,11 @@ async function onActivate(plugin: ReactRNPlugin) {
     name: "Extend CDF",
     description: "Extend CDF",
     action: async () => {
-      const focusedRem = await plugin.focus.getFocusedRem();
-      const x = await filterAsync((await focusedRem?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
-      console.log(x);
+      const rem = await plugin.focus.getFocusedRem();
+      const slot = await rem?.getChildrenRem()
+      console.log(slot)
+      // const x = await filterAsync((await focusedRem?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
+      // console.log(x);
     }
   })
 
