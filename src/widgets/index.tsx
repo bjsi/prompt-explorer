@@ -81,7 +81,8 @@ async function onActivate(plugin: ReactRNPlugin) {
         : runPrompt(plugin, focusedRem, state)
     )
 
-    await Promise.all(runs)
+    const results = await Promise.all(runs)
+    console.log(results)
   }
 
   // await plugin.app.registerCommand({
@@ -96,11 +97,9 @@ async function onActivate(plugin: ReactRNPlugin) {
     name: "Extend CDF",
     description: "Extend CDF",
     action: async () => {
+      // idea: tokenize query
+      // if document, get all rem, filter down to rem containing any of the query tokens
       const rem = await plugin.focus.getFocusedRem();
-      const slot = await rem?.getChildrenRem()
-      console.log(slot)
-      // const x = await filterAsync((await focusedRem?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
-      // console.log(x);
     }
   })
 
@@ -136,6 +135,14 @@ async function onActivate(plugin: ReactRNPlugin) {
     description: "Your personal OpenAI API key",
     defaultValue: '',
   });
+
+  await plugin.app.registerWidget(
+    'chatbot',
+    WidgetLocation.RightSidebar,
+    {
+      dimensions: { height: 'auto', width: 'auto' },
+    }
+  )
 
   await plugin.app.registerWidget(
     'completion_controls',
@@ -183,7 +190,7 @@ async function onActivate(plugin: ReactRNPlugin) {
         }
       }
       plugin.app.registerCommand({
-        id: name,
+        id: workflow._id,
         name,
         action,
       })

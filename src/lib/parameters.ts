@@ -1,6 +1,7 @@
 import { BuiltInPowerupCodes, filterAsync, Rem, RNPlugin, SelectionType } from "@remnote/plugin-sdk";
 import {getPromptRichText} from "./prompt";
 import { PromptParam } from "./types";
+import * as R from 'remeda';
 
 export const getParametersFromPromptRem = async (
     plugin: RNPlugin,
@@ -14,20 +15,16 @@ export const getParametersFromPromptRem = async (
         (await plugin.rem.findMany(args)) || [],
         async x => !await x.hasPowerup(BuiltInPowerupCodes.Aliases)
     )
-    const richTextIdxOfArgs = rem.text
-      .filter(el => el.i === 'q')
-      .map(el => rem.text.indexOf(el));
     const ret = []
     for (let i = 0; i < argRems.length; i++) {
       const argRem = argRems[i];
       ret.push({
         remId: argRem._id,
         name: await plugin.richText.toString(argRem.text),
-        idx: richTextIdxOfArgs[i],
         promptRichText,
       })
     }
-    return ret;
+    return R.uniqBy(ret, x => x.name);
 }
 
 export const useSelectionAsFirstParameter = async (

@@ -49,6 +49,7 @@ export const getPromptArguments = async (
     }
 
     const paramsWithoutArgs = params.filter(param => state[param.name] == null)
+    console.log("params without args", paramsWithoutArgs)
     if (paramsWithoutArgs.length === 0) return state;
 
     const args = await new Promise<Record<string, string> | null>(async (res) => {
@@ -68,7 +69,13 @@ export const getRequiredPromptArgs = async (
 ) => {
   const promptParams = await getParametersFromPromptRem(plugin, rem);
   if (promptParams.length > 0) {
-    return {...state, ...await getPromptArguments(plugin, promptParams, state)}
+    const promptArgs = await getPromptArguments(plugin, promptParams, state)
+    if (promptArgs === null) {
+      return null;
+    }
+    else {
+      return {...state, ...promptArgs}
+    }
   }
   else {
     return {...state}

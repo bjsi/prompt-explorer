@@ -1,4 +1,4 @@
-import {filterAsync, Rem, RichTextElementRemInterface, RNPlugin} from "@remnote/plugin-sdk";
+import {filterAsync, Rem, RichTextElementInterface, RichTextElementRemInterface, RICH_TEXT_FORMATTING, RNPlugin, SelectionType} from "@remnote/plugin-sdk";
 import {beforeSlotCode, promptPowerupCode} from "./consts";
 import {getCodeFromTransformer, isPromptParameter} from "./postprocess";
 import * as R from 'remeda';
@@ -16,28 +16,50 @@ interface Code {
   text: string;
 }
 
-const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementRemInterface): Promise<Assignment | Code | undefined> => {
-  if (await isPromptParameter(plugin, x._id)) {
-    return {
-      type: 'assignment',
-      text: (await plugin.rem.findOne(x.aliasId))!.text[0] as string,
+interface Text {
+  type: 'text';
+  text: string;
+}
+
+const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementInterface): Promise<Assignment | Code | Text | undefined> => {
+  if (x.i === 'q') {
+    if (await isPromptParameter(plugin, x._id)) {
+      return {
+        type: 'assignment',
+        text: (await plugin.rem.findOne(x.aliasId))!.text[0] as string,
+      }
+    }
+    // TODO:
+    else if (x.aliasId != null) {
+      const code = await getCodeFromTransformer(plugin, x._id)
+      if (!code) return undefined
+      return {
+        type: 'code',
+        text: code
+      }
     }
   }
   else {
-    const code = await getCodeFromTransformer(plugin, x._id)
-    if (!code) return undefined
-    return {
-      type: 'code',
-      text: code
+    if (x.i == 'm' && x[RICH_TEXT_FORMATTING.QUOTE]) {
+      if (x.text.match(/^".*"$/)) {
+        return {
+          type: 'text',
+          text: x.text.slice(1, -1),
+        }
+      }
+      else {
+        return {
+          type: 'code',
+          text: x.text,
+        }
+      }
     }
   }
 }
 
 const getAllPreProcessComputations = async (plugin: RNPlugin, rem: Rem) => {
-  const allPPs = 
-    ((await rem?.getPowerupPropertyAsRichText(promptPowerupCode, "before")) || [])
-     .filter(x => x.i == 'q') as RichTextElementRemInterface[]
-  if (allPPs.length > 0) {
+  const allPPs = (await rem?.getPowerupPropertyAsRichText(promptPowerupCode, "before"))
+  if (allPPs) {
     const preProcessComputation = await Promise.all(allPPs.map(x => mapToProcessorType(plugin, x)))
     return [R.compact(preProcessComputation)];
   }
@@ -48,10 +70,10 @@ const getAllPreProcessComputations = async (plugin: RNPlugin, rem: Rem) => {
     }
     const slot = (await rem.getChildrenRem()).find(x => x.text[0]?._id === s._id);
     const preProcessComputationRems = await filterAsync((await slot?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
-    const preProcessComputations: (Assignment | Code)[][] = []
+    const preProcessComputations: (Assignment | Code | Text)[][] = []
     for (const preProcessComputationRem of preProcessComputationRems) {
       const preProcessComputation = R.compact(
-        await Promise.all((preProcessComputationRem.text.filter(x => x.i === 'q') as RichTextElementRemInterface[]).map(x => mapToProcessorType(plugin, x))
+        await Promise.all((preProcessComputationRem.text).map(x => mapToProcessorType(plugin, x))
       ));
       preProcessComputations.push(preProcessComputation);
     }
@@ -71,7 +93,10 @@ export const evalPreprocessors = async (
     let lastRes: any = undefined
     for (let i = 0; i < computation.length; i++) {
       const step = computation[i];
-      if (step.type == "code") {
+      if (step.type == "text") {
+        lastRes = step.text;
+      }
+      else if (step.type == "code") {
         
         // Add special pre process fns here
         async function docTitle() {
@@ -81,12 +106,46 @@ export const evalPreprocessors = async (
           );
         }
 
+        async function selText() {
+          //TODO: rem
+          const sel = await plugin.editor.getSelection();
+          if (sel?.type === SelectionType.Text) {
+            return await plugin.richText.toString(sel.richText);
+          }
+        }
+
+        // TODO: optimize?
+        async function search() {
+          const query = lastRes.trim();
+          const tokens = query.split(/\s+/);
+          const searchRes = await filterAsync((await plugin.search.search([query], undefined, {numResults: 20})), async x => !await x.hasPowerup(promptPowerupCode))
+          console.log(searchRes)
+          let remTexts: string[] = []
+          for (const res of searchRes) {
+            if (await res.isDocument()) {
+              remTexts = remTexts.concat((await Promise.all((await res.allRemInDocumentOrPortal()).map(x => plugin.richText.toString(x.text)))))
+            }
+            else {
+              remTexts = remTexts.concat(await plugin.richText.toString(res.text))
+            }
+          }
+          const res = remTexts.filter(x => x?.search(new RegExp(tokens.join('|'), 'gim')) != -1).join('\n\n')
+          console.log("search results", res)
+          return res
+        }
+
         let f = eval(step.text)
         let newRes = await f(lastRes)
         lastRes = newRes
       }
+      // assignment TODO: refactor this
       else {
-        newState[step.text] = lastRes
+        if (i == computation.length - 1) {
+          newState[step.text] = lastRes
+        }
+        else {
+          lastRes = newState[step.text];
+        }
       }
 
       if (i == computation.length -1 ) {

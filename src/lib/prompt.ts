@@ -28,7 +28,7 @@ export interface PromptOutput {
 export const runPrompt = async (
   plugin: RNPlugin,
   rem: Rem,
-  state: Record<string, string> = {},
+  _state: Record<string, string> = {},
   opts: RunPromptOptions = {}
 ): Promise<PromptOutput | undefined> => {
   const completePowerup = await plugin.powerup.getPowerupByCode(completionPowerupCode)
@@ -39,15 +39,17 @@ export const runPrompt = async (
   }
   const promptRichText = await getPromptRichText(plugin, rem);
   let finalPromptRichText = [...promptRichText];
-  state = {...state, ...await evalPreprocessors(plugin, rem, state)}
-  console.log(state);
-  return
+  const state = {..._state, ...await evalPreprocessors(plugin, rem, _state)}
 
   // need !opts.dontAskForArgs to avoid potential infinite loop?
   const isGeneric = !opts.dontAskForArgs && (await getParametersFromPromptRem(plugin, rem)).length > 0;
   const promptArgs = opts.dontAskForArgs
     ? state
     : await getRequiredPromptArgs(plugin, rem, state)
+  if (promptArgs == null) {
+    plugin.app.toast("Cancelled.")
+    return;
+  }
   if (promptArgs != null) {
     finalPromptRichText = await insertArgumentsIntoPrompt(plugin, finalPromptRichText, { ...state, ...promptArgs });
   }

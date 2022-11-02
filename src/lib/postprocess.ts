@@ -90,7 +90,7 @@ export const evalTransformers = async (
   opts: RunPromptOptions = {},
 ) => {
     const allPPs = await getAllPostProcessors(rem)
-    let codes = await filterTransformers(plugin, allPPs);
+    let codes = R.compact(await filterTransformers(plugin, allPPs));
     if (allPPs.length === 0) {
       codes = fallbackPostProcessors;
     }

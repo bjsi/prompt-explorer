@@ -23,7 +23,13 @@ export const updateState = async (
   output: unknown,
   state: Record<string, string>
 ) => {
-  const postProcesses = (await promptRem.getPowerupPropertyAsRichText(promptPowerupCode, 'postprocess')).filter(el => el.i == 'q') as RichTextElementRemInterface[];
-  const lastProcess = postProcesses[postProcesses.length - 1]
-  return await assignToStateVar(plugin, lastProcess, output, state)
+  const postProcesses = (await promptRem.getPowerupPropertyAsRichText(promptPowerupCode, 'postprocess')) || [];
+  const filtered = postProcesses.filter(el => el.i == 'q') as RichTextElementRemInterface[];
+  if (filtered.length > 0) {
+    const lastProcess = filtered[filtered.length - 1]
+    return await assignToStateVar(plugin, lastProcess, output, state)
+  }
+  else {
+    return state;
+  }
 }
