@@ -2,6 +2,7 @@ import {filterAsync, Rem, RichTextElementInterface, RichTextElementRemInterface,
 import {beforeSlotCode, promptPowerupCode} from "./consts";
 import {getCodeFromTransformer, isPromptParameter} from "./postprocess";
 import * as R from 'remeda';
+import { RunPromptOptions } from "./prompt";
 
 export const fallbackPreProcessors = [
 ]
@@ -21,7 +22,7 @@ interface Text {
   text: string;
 }
 
-const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementInterface): Promise<Assignment | Code | Text | undefined> => {
+export const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementInterface): Promise<Assignment | Code | Text | undefined> => {
   if (x.i === 'q') {
     if (await isPromptParameter(plugin, x._id)) {
       return {
@@ -86,6 +87,7 @@ export const evalPreprocessors = async (
   plugin: RNPlugin,
   rem: Rem,
   state: Record<string, any> = {},
+  opts: RunPromptOptions = {}
 ) => {
   const newState = {...state};
   const allPreProcessCompuations = await getAllPreProcessComputations(plugin, rem)
@@ -97,8 +99,19 @@ export const evalPreprocessors = async (
         lastRes = step.text;
       }
       else if (step.type == "code") {
-        
+
         // Add special pre process fns here
+        async function parentText() {
+          const rem = await plugin.rem.findOne(opts.focusedRemId);
+          const parent = await rem?.getParentRem();
+          return await plugin.richText.toString(parent?.text || []);
+        }
+
+        async function remText() {
+          const r = await plugin.focus.getFocusedRem()
+          return await plugin.richText.toString(r?.text || []);
+        }
+
         async function docTitle() {
           // TODO: wrong
           return await plugin.richText.toString(

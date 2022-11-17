@@ -1,7 +1,7 @@
-import { declareIndexPlugin, filterAsync, ReactRNPlugin, WidgetLocation } from '@remnote/plugin-sdk';
+import { AppEvents, declareIndexPlugin, filterAsync, ReactRNPlugin, RemType, RichTextInterface, WidgetLocation } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
-import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, afterSlotCode, workflowCode, beforeSlotCode } from '../lib/consts';
+import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, afterSlotCode, workflowCode, beforeSlotCode, tutorCode, stopCode, temperatureCode, modelCode, triggerSequenceCode, triggerIfCode } from '../lib/consts';
 import {getWorkflowPrompts, runWorkflow} from '../lib/workflow';
 import {runPrompt} from '../lib/prompt';
 import {useSelectionAsFirstParameter} from '../lib/parameters';
@@ -9,11 +9,31 @@ import * as R from 'remeda';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.app.registerPowerup(
+    'Tutor',
+    tutorCode,
+    "Register prompt as a tutor",
+    {
+      slots: []
+    }
+  )
+
+  await plugin.app.registerPowerup(
     'Workflow',
     workflowCode,
     "Register prompt chain as a workflow",
     {
-      slots: []
+      slots: [
+      {
+        name: "trigger sequence",
+        code: triggerSequenceCode,
+        hidden: false
+      },
+      {
+        name: "trigger sequence if",
+        code: triggerIfCode,
+        hidden: false
+      }
+      ]
     }
   )
 
@@ -25,6 +45,21 @@ async function onActivate(plugin: ReactRNPlugin) {
     {
       // override global settings
       slots: [
+      {
+        name: "model",
+        code: modelCode,
+        hidden: false
+      },
+      {
+        name: "temperature",
+        code: temperatureCode,
+        hidden: false
+      },
+      {
+        name: "stop",
+        code: stopCode,
+        hidden: false
+      },
       {
         name: "after",
         code: afterSlotCode,
@@ -92,14 +127,47 @@ async function onActivate(plugin: ReactRNPlugin) {
   //   }
   // })
 
+  // listen for key sequence triggers
+  plugin.event.addListener(
+    AppEvents.EditorTextEdited,
+    undefined,
+    async (line: RichTextInterface) => {
+      const selection = await plugin.editor.getSelectedText();
+      if (!selection) return;
+      const prevLineRichText = await plugin.richText.substring(line, 0, selection.range.start);
+      const prevLineString = await plugin.richText.toString(prevLineRichText);
+      // TODO: trigger the most specific workflow match
+      if (prevLineString.endsWith("+++")) {
+        const focusedRem = await plugin.focus.getFocusedRem();
+        const pw = await plugin.powerup.getPowerupByCode(workflowCode)!;
+        const workflows = (await pw?.taggedRem()) || [];
+        const filteredWorkflows = await filterAsync(workflows, (async w => {
+          const x = await w.getPowerupProperty(workflowCode, triggerIfCode)
+          if (!x) {
+            return false
+          }
+          function isDescriptorAnswer() {
+            return focusedRem?.type === RemType.DESCRIPTOR && prevLineRichText.some(x => x.i === 's')
+          }
+          let f = eval(x);
+          return await f();
+        }))
+        const workflow = filteredWorkflows[0];
+        if (workflow) {
+          await plugin.editor.deleteCharacters(3, -1)
+          await runWorkflow(plugin, workflow, {}, {focusedRemId: focusedRem?._id, isCommandCallback: true})
+        }
+      }
+    }
+  );
+
   await plugin.app.registerCommand({
-    id: "extend-cdf",
-    name: "Extend CDF",
-    description: "Extend CDF",
+    id: "test",
+    name: "Test",
+    description: "",
     action: async () => {
-      // idea: tokenize query
-      // if document, get all rem, filter down to rem containing any of the query tokens
-      const rem = await plugin.focus.getFocusedRem();
+      const t = await plugin.editor.getFocusedEditorText();
+      console.log(t);
     }
   })
 
@@ -137,10 +205,10 @@ async function onActivate(plugin: ReactRNPlugin) {
   });
 
   await plugin.app.registerWidget(
-    'chatbot',
+    'generic_tutor',
     WidgetLocation.RightSidebar,
     {
-      dimensions: { height: 'auto', width: 'auto' },
+      dimensions: { height: "auto", width: "100%" },
     }
   )
 
@@ -160,6 +228,13 @@ async function onActivate(plugin: ReactRNPlugin) {
       dimensions: { height: 'auto', width: 'auto' },
     }
   );
+
+  // await plugin.app.registerWidget(
+  //   "suggest_prompts",
+  //   WidgetLocation.DocumentBelowTitle,
+  //   {
+  //     dimensions: { height: 'auto', width: 'auto' },
+  // )
 
   await plugin.app.registerWidget(
     "test_input",

@@ -2,6 +2,7 @@ import {BuiltInPowerupCodes, filterAsync, Rem, RichTextElementRemInterface, RNPl
 import {completionPowerupCode, promptPowerupCode} from "./consts";
 import {RunPromptOptions} from "./prompt";
 import * as R from 'remeda'
+import { openStdin } from "process";
 
 export const fallbackPostProcessors = [
   "xs => xs.flatMap(x => x.split(/\\r?\\n/))", // split
@@ -133,6 +134,12 @@ export const evalTransformers = async (
         }
       }
 
+      async function answerify(completions: string) {
+        const rem = await plugin.rem.findOne(opts.focusedRemId);
+        await rem?.setBackText([completions])
+        return completions;
+      }
+
       async function childify(completions: string[]) {
         const completionPowerup = await plugin.powerup.getPowerupByCode(completionPowerupCode);
         if (!rem || !completionPowerup) {
@@ -148,6 +155,7 @@ export const evalTransformers = async (
           await childRem?.setText([completion])
           await childRem?.setParent(parent)
         }
+        return completions
       }
 
       async function childifyQAs(completions: string[]) {

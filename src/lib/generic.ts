@@ -1,6 +1,6 @@
 import {Rem, RichTextElementInterface, RNPlugin} from "@remnote/plugin-sdk";
 import {insertArgumentsIntoPrompt} from "./arguments";
-import {promptPowerupCode, afterSlotCode} from "./consts";
+import {promptPowerupCode, afterSlotCode, beforeSlotCode, stopCode, temperatureCode, modelCode} from "./consts";
 
 export const createInstanceOfGenericPrompt = async (
   plugin: RNPlugin,
@@ -13,7 +13,7 @@ export const createInstanceOfGenericPrompt = async (
   const finalPromptRichText = await insertArgumentsIntoPrompt(plugin, promptRichText, state);
   await rem?.setText(finalPromptRichText);
   await rem?.addTag(promptPowerup!);
-  const slotsToCopy = [afterSlotCode];
+  const slotsToCopy = [afterSlotCode, beforeSlotCode, stopCode, temperatureCode, modelCode];
   for (const slot of slotsToCopy) {
     const value = await genericPromptRem.getPowerupPropertyAsRichText(promptPowerupCode, slot);
     if (value) {

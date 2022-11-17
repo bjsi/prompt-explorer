@@ -3,7 +3,7 @@ import {getRequiredPromptArgs, insertArgumentsIntoPrompt} from "./arguments"
 import {updateState} from "./assigment"
 import {completionPowerupCode, promptPowerupCode, testInputCode} from "./consts"
 import {createInstanceOfGenericPrompt} from "./generic"
-import {complete} from "./gpt"
+import {completeRemPrompt} from "./gpt"
 import {getParametersFromPromptRem} from "./parameters"
 import {evalTransformers} from "./postprocess"
 import {evalPreprocessors} from "./preprocess"
@@ -39,7 +39,7 @@ export const runPrompt = async (
   }
   const promptRichText = await getPromptRichText(plugin, rem);
   let finalPromptRichText = [...promptRichText];
-  const state = {..._state, ...await evalPreprocessors(plugin, rem, _state)}
+  const state = {..._state, ...await evalPreprocessors(plugin, rem, _state, opts)}
 
   // need !opts.dontAskForArgs to avoid potential infinite loop?
   const isGeneric = !opts.dontAskForArgs && (await getParametersFromPromptRem(plugin, rem)).length > 0;
@@ -74,7 +74,7 @@ export const runPrompt = async (
     }
     else {
       const textPrompt = await plugin.richText.toString(finalPromptRichText);
-      const completion = await complete(plugin, textPrompt, rem._id)
+      const completion = await completeRemPrompt(plugin, textPrompt, rem)
       console.log(completion)
       if (!completion) {
         return
@@ -86,5 +86,6 @@ export const runPrompt = async (
     }
   }
 
-  return {...res, args: await updateState(plugin, rem, res.result, res.args)}
+  const dfsdf = {...res, args: await updateState(plugin, rem, res.result, res.args)}
+  return dfsdf
 }

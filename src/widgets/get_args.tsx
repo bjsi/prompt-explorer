@@ -1,4 +1,4 @@
-import { usePlugin, renderWidget, useRunAsync, WidgetLocation, useSessionStorageState, } from '@remnote/plugin-sdk';
+import { usePlugin, renderWidget, useRunAsync, WidgetLocation, useSessionStorageState, RichText, RichTextEditor, } from '@remnote/plugin-sdk';
 import {argsValuesStorageKey } from '../lib/consts';
 import {PromptParam, } from '../lib/types';
 import React from 'react';
@@ -22,11 +22,11 @@ export const GetArgumentsModal = () => {
   console.log(existingArgValues)
 
   return (
-    <div className="p-2">
+    <div className="p-2 w-[400px] max-w-[400px]">
     <div>
       {
         // TODO: rich text component broken
-        previewPromptText
+        <RichTextEditor className="w-[400px]" readOnly text={previewPrompt || []} />
       }
     </div>
     {
