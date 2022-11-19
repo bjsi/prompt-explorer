@@ -1,4 +1,4 @@
-import { AppEvents, declareIndexPlugin, filterAsync, ReactRNPlugin, RemType, RichTextInterface, WidgetLocation } from '@remnote/plugin-sdk';
+import { AppEvents, declareIndexPlugin, filterAsync, ReactRNPlugin, RemType, WidgetLocation } from '@remnote/plugin-sdk';
 import '../style.css';
 import '../App.css';
 import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, afterSlotCode, workflowCode, beforeSlotCode, tutorCode, stopCode, temperatureCode, modelCode, triggerSequenceCode, triggerIfCode } from '../lib/consts';
@@ -36,7 +36,6 @@ async function onActivate(plugin: ReactRNPlugin) {
       ]
     }
   )
-
 
   await plugin.app.registerPowerup(
     'Prompt',
@@ -117,7 +116,6 @@ async function onActivate(plugin: ReactRNPlugin) {
     )
 
     const results = await Promise.all(runs)
-    console.log(results)
   }
 
   // await plugin.app.registerCommand({
@@ -166,8 +164,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     name: "Test",
     description: "",
     action: async () => {
-      const t = await plugin.editor.getFocusedEditorText();
-      console.log(t);
+      const t = await plugin.window.openWidgetInPane("generic_tutor")
     }
   })
 
@@ -236,14 +233,14 @@ async function onActivate(plugin: ReactRNPlugin) {
   //     dimensions: { height: 'auto', width: 'auto' },
   // )
 
-  await plugin.app.registerWidget(
-    "test_input",
-    WidgetLocation.UnderRemEditor,
-    {
-      dimensions: { height: 'auto', width: '100%' },
-      powerupFilter: promptPowerupCode,
-    }
-  );
+  // await plugin.app.registerWidget(
+  //   "test_input",
+  //   WidgetLocation.UnderRemEditor,
+  //   {
+  //     dimensions: { height: 'auto', width: '100%' },
+  //     powerupFilter: promptPowerupCode,
+  //   }
+  // );
 
   plugin.track(async (reactivePlugin) => {
     const pw = await reactivePlugin.powerup.getPowerupByCode(workflowCode)!;

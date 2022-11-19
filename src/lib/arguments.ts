@@ -16,7 +16,7 @@ export const insertArgumentsIntoPrompt = async (
         if (richTextEl.i === 'q') {
           const aliasRem = await plugin.rem.findOne(richTextEl.aliasId);
           const aliasText = await plugin.richText.toString(aliasRem!.text)
-          if (args[aliasText] !== undefined) {
+          if (args[aliasText]) {
             newPrompt[i] = args[aliasText]
           }
         }

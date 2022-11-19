@@ -17,7 +17,6 @@ export const GetArgumentsModal = () => {
   const promptParams = ((ctx?.contextData.args || []) as PromptParam[]);
   const promptRichText = promptParams[0]?.promptRichText || [];
   const previewPrompt = useRunAsync(async () => await insertArgumentsIntoPrompt(plugin, promptRichText, inputValues), [promptRichText, inputValues, promptParams])
-  const previewPromptText = useRunAsync(async () => await plugin.richText.toString(previewPrompt || []), [previewPrompt])
 
   console.log(existingArgValues)
 
@@ -25,12 +24,11 @@ export const GetArgumentsModal = () => {
     <div className="p-2 w-[400px] max-w-[400px]">
     <div>
       {
-        // TODO: rich text component broken
         <RichTextEditor className="w-[400px]" readOnly text={previewPrompt || []} />
       }
     </div>
     {
-      ((ctx?.contextData.args || []) as PromptParam[]).map((arg, idx) =>
+      ((ctx?.contextData.args || []) as PromptParam[]).map((arg) =>
         <div className="flex gap-2 p-2">
           {
             arg.name

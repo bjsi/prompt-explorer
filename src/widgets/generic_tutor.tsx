@@ -1,10 +1,11 @@
-import { usePlugin, renderWidget, useTracker, useRunAsync, LoadingSpinner, filterAsync, RichTextEditor, RemRichTextEditor, Rem, RemHierarchyEditorTree } from '@remnote/plugin-sdk';
+import { usePlugin, renderWidget, useTracker, useRunAsync, LoadingSpinner, filterAsync, RichTextEditor, RemRichTextEditor, Rem, RemHierarchyEditorTree, RichText, useLocalStorageState } from '@remnote/plugin-sdk';
 import React from 'react'
-import {promptPowerupCode, tutorCode} from '../lib/consts';
+import { promptPowerupCode, tutorCode } from '../lib/consts';
 import { completeTextPrompt } from '../lib/gpt';
 import {getParametersFromPromptRem} from '../lib/parameters';
 import {runPrompt} from '../lib/prompt';
 import * as R from 'remeda';
+import { insertArgumentsIntoPrompt } from '../lib/arguments';
 
 const MAX_SHORT_TERM_MEM_LEN = 6
 
@@ -14,7 +15,6 @@ const MAX_SHORT_TERM_MEM_LEN = 6
 // classify answer in terms of the descriptor it could be assigned to
 // slider determining how many words must match
 
-
 export function Chatbot() {
   const plugin = usePlugin();
   const tutors = useTracker(async () => {
@@ -23,6 +23,7 @@ export function Chatbot() {
   }, []) || []
 
   const chatbot = tutors[0];
+  const promptRichText = chatbot?.text;
 
   const requiredPromptParams = useRunAsync(async () => {
     const allParams = await getParametersFromPromptRem(plugin, chatbot)
@@ -31,13 +32,21 @@ export function Chatbot() {
 
   const [relatedNotes, setRelatedNotes] = React.useState<Rem[]>([]);
 
-  const [promptArgsState, setPromptArgsState] = React.useState<Record<string, string>>({});
-  
-  const userMessageRemId = useRunAsync(() => plugin.rem.createRem(),[])?._id
-  const userMessageRem = useTracker((rp) => rp.rem.findOne(userMessageRemId), [userMessageRemId]);
-  const [history, setHistory] = React.useState<string[]>([]);
-  const shortTermMemory = history.slice(-6)
+  const [promptArgsState, setPromptArgsState] = useLocalStorageState<Record<string, string>>("promptArgsState", {});
+  const [userMessage, setUserMessage] = useLocalStorageState<string>("userMessage", "");
+  const [messageHistory, setHistory] = useLocalStorageState<string[]>("messageHistory", [])
+
+  const shortTermMemory = messageHistory.slice(-MAX_SHORT_TERM_MEM_LEN)
   const [keywords, setKeywords] = React.useState<string[]>([])
+  const previewPrompt = useRunAsync(async () => {
+    if (promptRichText) {
+      return await insertArgumentsIntoPrompt(plugin, promptRichText, promptArgsState)
+    }
+  }, [promptRichText, promptArgsState, requiredPromptParams])
+
+  React.useEffect(() => {
+    setPromptArgsState({...promptArgsState, "short term memory": messageHistory.slice(-MAX_SHORT_TERM_MEM_LEN).join('\n')})
+  }, [messageHistory])
   
   // parallel search
   // filter rem texts containing at least two keywords
@@ -85,15 +94,14 @@ Top three most important keywords:
   React.useEffect(() => {
     const eff = async () => {
       const words = await extractKeywords();
-      debugger;
       const similar = await similarKeywords(words)
       const allWords = R.uniq(words.concat(similar).map(x => x.toLowerCase())).filter(x => !!x)
       setKeywords(allWords)
     }
-    if (history.length > 0 && history.length % 2 === 0) {
+    if (messageHistory.length > 0 && messageHistory.length % 2 === 0) {
       eff();
     }
-  }, [history])
+  }, [messageHistory])
 
   React.useEffect(() => {
     const eff = async () => {
@@ -105,15 +113,9 @@ Top three most important keywords:
     }
   }, [keywords])
 
-  // // a summary of the entire conversation so far
-  // const longTermMemory = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState(false);
   const sendMsg = async () => {
     if (chatbot) {
-      const userMessage = (await plugin.richText.toString(userMessageRem?.text || [])).trim()
-      if (!userMessage) {
-        return;
-      }
       const unsuppliedParam = requiredPromptParams?.find(x => !promptArgsState[x.name])
       if (unsuppliedParam) {
         plugin.app.toast("unsuppliedParam: " + unsuppliedParam.name)
@@ -121,15 +123,15 @@ Top three most important keywords:
       }
       const state = {
         ...promptArgsState,
-        "short term memory": history.join('\n'),
+        "short term memory": messageHistory.join('\n'),
         "question": userMessage,
       }
 
-      const stm = [...history]
+      const stm = [...messageHistory]
       stm.push("Human: " + userMessage)
       setHistory(stm)
 
-      userMessageRem?.setText([])
+      setUserMessage("")
 
       setLoading(true);
       const resp = await runPrompt(plugin, chatbot, state, {isCommandCallback: true})
@@ -144,46 +146,58 @@ Top three most important keywords:
   }
 
   return (
-    <div className="h-[100%] w-[95%] overflow-y-auto p-1">
-      <div>
+    <div className="h-[100%] w-[97%] overflow-y-auto p-1">
+      <div className="border border-solid rounded-md p-2 m-2 bg-white">
+        {
+          <RichText
+            text={previewPrompt || []}
+            width="100%"
+          />
+        }
+      </div>
+      <div className="flex flex-col">
       {
-        requiredPromptParams?.map((x, idx) => 
+        requiredPromptParams?.map((param, idx) => 
           <div key={idx}>
-            <span>{x.name}</span>
-            <input value={promptArgsState[x.name]} onChange={e => setPromptArgsState(last => ({...last, [x.name]: e.target.value}))} />
+            <span>{param.name}</span>
+            <input value={promptArgsState[param.name]} onChange={e => setPromptArgsState(({...promptArgsState, [param.name]: e.target.value}))} />
+          </div>
+        )
+      }
+      </div>
+      <div className="border border-solid rounded-md p-2 overflow-y-auto">
+      {
+        messageHistory.map((message, idx) =>
+          <div key={idx} className="border border-solid p-1 rounded-md">
+          {
+            message
+          }
           </div>
         )
       }
       </div>
       {
-        history.map((x, idx) =>
-          <div key={idx} className="border border-solid p-1 rounded-md">
-          {
-            x
-          }
-          </div>
-        )
-      }
-      {
         loading && <LoadingSpinner></LoadingSpinner>
       }
       {
-        relatedNotes.length > 0 && relatedNotes.map(x =>
-          <RemHierarchyEditorTree key={x._id} remId={x._id}></RemHierarchyEditorTree >
+        relatedNotes.length > 0 && relatedNotes.slice(0, 3).map(x =>
+          <div key={x._id} className="border border-solid p-2 rounded-md">
+            <RichText text={x.text} width="100%"/>
+          </div>
         )
       }
       <div
         className="p-1 rounded rounded-md border border-solid"
         onKeyDown={e => {
-          if (e.key == "Enter" && chatbot) {
-            debugger;
+          if (!e.shiftKey && e.key == "Enter" && chatbot) {
             sendMsg();
           }
         }}
       >
-        <RemRichTextEditor
-          width="95%"
-          remId={userMessageRem?._id}
+        <textarea
+          className={"w-[95%]"}
+          value={userMessage}
+          onChange={e => setUserMessage(e.target.value)}
         />
       </div>
       <button onClick={() => sendMsg()} className="border border-solid ">Send</button>
