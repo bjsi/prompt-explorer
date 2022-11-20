@@ -1,86 +1,10 @@
-import {filterAsync, Rem, RichTextElementInterface, RichTextElementRemInterface, RICH_TEXT_FORMATTING, RNPlugin, SelectionType} from "@remnote/plugin-sdk";
-import {beforeSlotCode, promptPowerupCode} from "./consts";
-import {getCodeFromTransformer, isPromptParameter} from "./postprocess";
-import * as R from 'remeda';
+import {filterAsync, Rem, RNPlugin, SelectionType} from "@remnote/plugin-sdk";
 import { RunPromptOptions } from "./prompt";
+import { getAllProcessComputations } from "./processors";
+import { promptPowerupCode } from "./consts";
 
 export const fallbackPreProcessors = [
 ]
-
-interface Assignment {
-  type: 'assignment';
-  text: string;
-}
-
-interface Code {
-  type: 'code';
-  text: string;
-}
-
-interface Text {
-  type: 'text';
-  text: string;
-}
-
-export const mapToProcessorType = async (plugin: RNPlugin, x: RichTextElementInterface): Promise<Assignment | Code | Text | undefined> => {
-  if (x.i === 'q') {
-    if (await isPromptParameter(plugin, x._id)) {
-      return {
-        type: 'assignment',
-        text: (await plugin.rem.findOne(x.aliasId))!.text[0] as string,
-      }
-    }
-    // TODO:
-    else if (x.aliasId != null) {
-      const code = await getCodeFromTransformer(plugin, x._id)
-      if (!code) return undefined
-      return {
-        type: 'code',
-        text: code
-      }
-    }
-  }
-  else {
-    if (x.i == 'm' && x[RICH_TEXT_FORMATTING.QUOTE]) {
-      if (x.text.match(/^".*"$/)) {
-        return {
-          type: 'text',
-          text: x.text.slice(1, -1),
-        }
-      }
-      else {
-        return {
-          type: 'code',
-          text: x.text,
-        }
-      }
-    }
-  }
-}
-
-const getAllPreProcessComputations = async (plugin: RNPlugin, rem: Rem) => {
-  const allPPs = (await rem?.getPowerupPropertyAsRichText(promptPowerupCode, "before"))
-  if (allPPs) {
-    const preProcessComputation = await Promise.all(allPPs.map(x => mapToProcessorType(plugin, x)))
-    return [R.compact(preProcessComputation)];
-  }
-  else {
-    const s = await plugin.powerup.getPowerupSlotByCode(promptPowerupCode, beforeSlotCode);
-    if (!s) {
-      return [];
-    }
-    const slot = (await rem.getChildrenRem()).find(x => x.text[0]?._id === s._id);
-    const preProcessComputationRems = await filterAsync((await slot?.getChildrenRem()) || [], x => x.isPowerupPropertyListItem())
-    const preProcessComputations: (Assignment | Code | Text)[][] = []
-    for (const preProcessComputationRem of preProcessComputationRems) {
-      const preProcessComputation = R.compact(
-        await Promise.all((preProcessComputationRem.text).map(x => mapToProcessorType(plugin, x))
-      ));
-      preProcessComputations.push(preProcessComputation);
-    }
-    return preProcessComputations;
-  }
-}
 
 // idea: each pre process step gets evaluated and updates the state with some assignment at the end
 export const evalPreprocessors = async (
@@ -90,7 +14,7 @@ export const evalPreprocessors = async (
   opts: RunPromptOptions = {}
 ) => {
   const newState = {...state};
-  const allPreProcessCompuations = await getAllPreProcessComputations(plugin, rem)
+  const allPreProcessCompuations = await getAllProcessComputations(plugin, rem, "pre")
   for (const computation of allPreProcessCompuations) {
     let lastRes: any = undefined
     for (let i = 0; i < computation.length; i++) {

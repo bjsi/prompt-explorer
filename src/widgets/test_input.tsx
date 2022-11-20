@@ -1,7 +1,7 @@
 import { usePlugin, renderWidget, useRunAsync, WidgetLocation, useTracker, } from '@remnote/plugin-sdk';
 import React from 'react';
 import {promptPowerupCode, testInputCode} from '../lib/consts';
-import {PromptOutput, runPrompt} from '../lib/prompt';
+import {runPrompt} from '../lib/prompt';
 
 export function TestInput() {
   const plugin = usePlugin();
@@ -9,9 +9,9 @@ export function TestInput() {
   const remId = ctx?.remId;
   const [refresh, setRefresh] = React.useState(0)
   const rem = useTracker(async () => await plugin.rem.findOne(remId), [remId, refresh])
-  const testInput = useRunAsync(async () => await rem?.getPowerupProperty(promptPowerupCode, testInputCode), [rem])
+  const testInput = useRunAsync(async () => await rem?.getPowerupProperty(promptPowerupCode, "mock completion"), [rem])
 
-  const [testOutput, setTestOutput] = React.useState<PromptOutput>() 
+  const [testOutput, setTestOutput] = React.useState<Record<string, any>>() 
 
   const [show, setShow] = React.useState(true);
   if (!testInput || !rem) {

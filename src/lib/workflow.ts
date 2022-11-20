@@ -17,14 +17,11 @@ export const runWorkflow = async (
   // TODO: if not workflwo rem conosole err
   const workflowPrompts = await getWorkflowPrompts(workflowRem)
   let state = {..._state}
-  let result = null;
   for (const promptRem of workflowPrompts) {
     const output = await runPrompt(plugin, promptRem, state, opts)
     if (output) {
-      const {args} = output
-      result = output.result;
-      state = await updateState(plugin, promptRem, result, args);
+      state = output
     }
   }
-  return {result, state};
+  return state
 }

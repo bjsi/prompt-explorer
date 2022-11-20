@@ -1,11 +1,11 @@
-import { AppEvents, declareIndexPlugin, filterAsync, ReactRNPlugin, RemType, WidgetLocation } from '@remnote/plugin-sdk';
-import '../style.css';
-import '../App.css';
+import { AppEvents, declareIndexPlugin, filterAsync, ReactRNPlugin, RemType, RichTextInterface, WidgetLocation } from '@remnote/plugin-sdk';
 import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, afterSlotCode, workflowCode, beforeSlotCode, tutorCode, stopCode, temperatureCode, modelCode, triggerSequenceCode, triggerIfCode } from '../lib/consts';
 import {getWorkflowPrompts, runWorkflow} from '../lib/workflow';
 import {runPrompt} from '../lib/prompt';
 import {useSelectionAsFirstParameter} from '../lib/parameters';
 import * as R from 'remeda';
+import '../style.css';
+import '../App.css';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.app.registerPowerup(
@@ -45,6 +45,11 @@ async function onActivate(plugin: ReactRNPlugin) {
       // override global settings
       slots: [
       {
+        name: "mock completion",
+        code: "mock completion",
+        hidden: false
+      },
+      {
         name: "model",
         code: modelCode,
         hidden: false
@@ -69,11 +74,7 @@ async function onActivate(plugin: ReactRNPlugin) {
         code: beforeSlotCode,
         hidden: false,
       },
-      {
-        name: "input",
-        code: testInputCode,
-        hidden: false
-      }]
+      ]
     }
   )
 
@@ -117,6 +118,15 @@ async function onActivate(plugin: ReactRNPlugin) {
 
     const results = await Promise.all(runs)
   }
+
+  await plugin.app.registerWidget(
+    'test_input',
+    WidgetLocation.UnderRemEditor,
+    {
+      dimensions: { height: "auto", width: "100%" },
+      powerupFilter: promptPowerupCode
+    }
+  )
 
   // await plugin.app.registerCommand({
   //   id: "auto-branch",
@@ -164,7 +174,7 @@ async function onActivate(plugin: ReactRNPlugin) {
     name: "Test",
     description: "",
     action: async () => {
-      const t = await plugin.window.openWidgetInPane("generic_tutor")
+      const t = await plugin.window.openWidgetInPane("flow")
     }
   })
 
@@ -242,6 +252,14 @@ async function onActivate(plugin: ReactRNPlugin) {
   //   }
   // );
 
+  await plugin.app.registerWidget(
+    "flow",
+    WidgetLocation.Pane,
+    {
+      dimensions: { height: 'auto', width: '100%' },
+    }
+  );
+
   plugin.track(async (reactivePlugin) => {
     const pw = await reactivePlugin.powerup.getPowerupByCode(workflowCode)!;
     const workflows = (await pw?.taggedRem()) || [];
@@ -250,7 +268,7 @@ async function onActivate(plugin: ReactRNPlugin) {
       const action = async () => {
         const focusedRem = await plugin.focus.getFocusedRem();
         const rem = await plugin.rem.findOne(workflow._id);
-        const firstPrompt = (await getWorkflowPrompts(rem))[0];
+        const firstPrompt = (await getWorkflowPrompts(rem!))[0];
         const state = await useSelectionAsFirstParameter(plugin, firstPrompt);
         if (!rem?.hasPowerup(workflowCode)) {
           // TODO: auto un-register.

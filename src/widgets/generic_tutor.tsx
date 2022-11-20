@@ -51,7 +51,7 @@ export function Chatbot() {
   // parallel search
   // filter rem texts containing at least two keywords
   async function search() {
-    const searches = (await Promise.all(keywords.map(k => plugin.search.search([k], undefined, {numResults: 5})))).flat()
+    const searches = (await Promise.all(keywords.map(k => plugin.search.search([k], undefined, {numResults: 3})))).flat()
     const results = (await Promise.all(searches.map(async s => {
       let rems: Rem[] = []
       if (await s.isDocument()) {

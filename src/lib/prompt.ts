@@ -1,11 +1,10 @@
 import {Rem, RemId, RNPlugin} from "@remnote/plugin-sdk"
 import {getRequiredPromptArgs, insertArgumentsIntoPrompt} from "./arguments"
-import {updateState} from "./assigment"
-import {completionPowerupCode, promptPowerupCode, testInputCode} from "./consts"
+import {completionPowerupCode, promptPowerupCode} from "./consts"
 import {createInstanceOfGenericPrompt} from "./generic"
 import {completeRemPrompt} from "./gpt"
 import {getParametersFromPromptRem} from "./parameters"
-import {evalTransformers} from "./postprocess"
+import {evalPostprocessors} from "./postprocess"
 import {evalPreprocessors} from "./preprocess"
 
 export const getPromptRichText = async (plugin: RNPlugin, rem: Rem) => {
@@ -20,17 +19,12 @@ export interface RunPromptOptions {
   focusedRemId?: RemId
 }
 
-export interface PromptOutput {
-  args: Record<string, string>
-  result: string[]
-}
-
 export const runPrompt = async (
   plugin: RNPlugin,
   rem: Rem,
   _state: Record<string, string> = {},
   opts: RunPromptOptions = {}
-): Promise<PromptOutput | undefined> => {
+): Promise<Record<string, any> | undefined> => {
   const completePowerup = await plugin.powerup.getPowerupByCode(completionPowerupCode)
   const promptPowerup = await plugin.powerup.getPowerupByCode(promptPowerupCode)
   if (!completePowerup || !promptPowerup) {
@@ -47,20 +41,16 @@ export const runPrompt = async (
     ? state
     : await getRequiredPromptArgs(plugin, rem, state)
   if (promptArgs == null) {
-    plugin.app.toast("Cancelled.")
     return;
   }
   if (promptArgs != null) {
     finalPromptRichText = await insertArgumentsIntoPrompt(plugin, finalPromptRichText, { ...state, ...promptArgs });
   }
-  const testInput = await rem.getPowerupProperty(promptPowerupCode, testInputCode)
-  let res;
+  const testInput = await rem.getPowerupProperty(promptPowerupCode, "mock completion")
+  let result;
   if (testInput) {
     console.log("Running prompt in test mode")
-    res = {
-      result: await evalTransformers(plugin, rem, [testInput]),
-      args: promptArgs
-    }
+    result = await evalPostprocessors(plugin, rem, [testInput], promptArgs, opts)
   }
   else {
     if (isGeneric && !testInput && !opts.isCommandCallback) {
@@ -79,13 +69,9 @@ export const runPrompt = async (
       if (!completion) {
         return
       }
-      res = {
-        result: await evalTransformers(plugin, rem, [completion], opts),
-        args: promptArgs
-      }
+      result = await evalPostprocessors(plugin, rem, [completion], promptArgs, opts)
     }
   }
-
-  const dfsdf = {...res, args: await updateState(plugin, rem, res.result, res.args)}
-  return dfsdf
+  console.log(result)
+  return result
 }
