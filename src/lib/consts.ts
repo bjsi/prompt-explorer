@@ -1,18 +1,17 @@
 export const apiKeyId = 'api-key';
-export const promptPowerupCode = 'prompt'
-export const promptParamPowerupCode = 'prompt-param'
-export const completionPowerupCode = 'completion';
-export const argsValuesStorageKey = 'args-storage'
-export const getArgsPropsStorageKey = 'get-args-props'
-export const afterSlotCode = 'postprocess'
-export const beforeSlotCode = 'before'
-export const testInputCode = "test-input";
-export const commandCode = "test-input";
-export const workflowCode = "workflow";
-export const tutorCode = "tutor";
-export const modelCode = "model";
-export const stopCode = "stop";
-export const temperatureCode = "temperature";
-export const triggerSequenceCode = "triggerSequence"
-export const triggerIfCode = "triggerIf"
-export const contextCode = "contextCode"
+export const promptPowerupCode = 'prompt';
+
+//
+// Prompt Powerup Slot Codes
+export const modelCode = 'model';
+export const stopCode = 'stop';
+export const temperatureCode = 'temperature';
+export const maxTokensCode = 'max-tokens';
+export const commandCode = 'command';
+
+//
+// Global Model Settings
+export const globalDefaultModelCode = 'global-default-model';
+export const globalDefaultStopCode = 'global-default-stop';
+export const globalDefaultTemperatureCode = 'global-default-temperature';
+export const globalDefaultMaxTokensCode = 'global-default-max-tokens';

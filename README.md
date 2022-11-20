@@ -6,7 +6,7 @@
 
 ## How to Use
 
-NOTE: Requires an [API key](https://beta.openai.com/).
+NOTE: It isn't free to use GPT-3. The cost depends on your usage. Please sign up for an [API key](https://openai.com/api/) and paste it into the "API Key" settings box in the plugin settings page.
 
 ### Builtin Prompts
 

@@ -1,291 +1,157 @@
-import { AppEvents, declareIndexPlugin, filterAsync, ReactRNPlugin, RemType, RichTextInterface, WidgetLocation } from '@remnote/plugin-sdk';
-import {apiKeyId, completionPowerupCode, promptParamPowerupCode, promptPowerupCode, testInputCode, afterSlotCode, workflowCode, beforeSlotCode, tutorCode, stopCode, temperatureCode, modelCode, triggerSequenceCode, triggerIfCode } from '../lib/consts';
-import {getWorkflowPrompts, runWorkflow} from '../lib/workflow';
-import {runPrompt} from '../lib/prompt';
-import {useSelectionAsFirstParameter} from '../lib/parameters';
-import * as R from 'remeda';
+import { declareIndexPlugin, ReactRNPlugin, Rem } from '@remnote/plugin-sdk';
+import {
+  apiKeyId,
+  promptPowerupCode,
+  stopCode,
+  temperatureCode,
+  modelCode,
+  maxTokensCode,
+  commandCode,
+  globalDefaultModelCode,
+  globalDefaultMaxTokensCode,
+  globalDefaultTemperatureCode,
+} from '../lib/consts';
+import { runPromptRem as runPrompt } from '../lib/prompt';
 import '../style.css';
 import '../App.css';
+import { generate_qas } from '../lib/generate_qas';
+import { generate_cdf } from '../lib/generate_cdf';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.app.registerPowerup(
-    'Tutor',
-    tutorCode,
-    "Register prompt as a tutor",
-    {
-      slots: []
-    }
-  )
-
-  await plugin.app.registerPowerup(
-    'Workflow',
-    workflowCode,
-    "Register prompt chain as a workflow",
-    {
-      slots: [
-      {
-        name: "trigger sequence",
-        code: triggerSequenceCode,
-        hidden: false
-      },
-      {
-        name: "trigger sequence if",
-        code: triggerIfCode,
-        hidden: false
-      }
-      ]
-    }
-  )
-
-  await plugin.app.registerPowerup(
     'Prompt',
     promptPowerupCode,
-    "GPT-3 Prompt Powerup",
+    'Tag a Rem with this powerup to turn it into a GPT-3 Prompt. This allows you to use slots to register the prompt as an Omnibar command and customize the completion parameters.',
     {
       // override global settings
       slots: [
-      {
-        name: "mock completion",
-        code: "mock completion",
-        hidden: false
-      },
-      {
-        name: "model",
-        code: modelCode,
-        hidden: false
-      },
-      {
-        name: "temperature",
-        code: temperatureCode,
-        hidden: false
-      },
-      {
-        name: "stop",
-        code: stopCode,
-        hidden: false
-      },
-      {
-        name: "after",
-        code: afterSlotCode,
-        hidden: false,
-      },
-      {
-        name: "before",
-        code: beforeSlotCode,
-        hidden: false,
-      },
-      ]
-    }
-  )
-
-  await plugin.app.registerPowerup(
-    'Prompt Parameter',
-    promptParamPowerupCode,
-    "GPT-3 Generic Prompt Parameter",
-    {
-      slots: []
-    }
-  )
-
-  await plugin.app.registerPowerup(
-    "Completion",
-    completionPowerupCode,
-    "GPT-3 Completion",
-    {
-      // ideas: save the prompt/pipelien used to generate?
-      slots: []
-    }
-  )
-  
-  const runPromptCommand = async (n: number) => {
-    const focusedRem = await plugin.focus.getFocusedRem();
-    if (!focusedRem) return;
-    const isWorkflow = await focusedRem?.hasPowerup(workflowCode);
-    let state = {}
-    if (isWorkflow) {
-      const firstPrompt = (await getWorkflowPrompts(focusedRem))[0];
-      state = await useSelectionAsFirstParameter(plugin, firstPrompt);
-    }
-    else {
-      state = await useSelectionAsFirstParameter(plugin, focusedRem);
-    }
-
-    const runs = R.range(0, n).map(_ =>
-      isWorkflow
-        ? runWorkflow(plugin, focusedRem, state)
-        : runPrompt(plugin, focusedRem, state)
-    )
-
-    const results = await Promise.all(runs)
-  }
-
-  await plugin.app.registerWidget(
-    'test_input',
-    WidgetLocation.UnderRemEditor,
-    {
-      dimensions: { height: "auto", width: "100%" },
-      powerupFilter: promptPowerupCode
-    }
-  )
-
-  // await plugin.app.registerCommand({
-  //   id: "auto-branch",
-  //   name: "Auto Branch",
-  //   action: () => {
-  //   }
-  // })
-
-  // listen for key sequence triggers
-  plugin.event.addListener(
-    AppEvents.EditorTextEdited,
-    undefined,
-    async (line: RichTextInterface) => {
-      const selection = await plugin.editor.getSelectedText();
-      if (!selection) return;
-      const prevLineRichText = await plugin.richText.substring(line, 0, selection.range.start);
-      const prevLineString = await plugin.richText.toString(prevLineRichText);
-      // TODO: trigger the most specific workflow match
-      if (prevLineString.endsWith("+++")) {
-        const focusedRem = await plugin.focus.getFocusedRem();
-        const pw = await plugin.powerup.getPowerupByCode(workflowCode)!;
-        const workflows = (await pw?.taggedRem()) || [];
-        const filteredWorkflows = await filterAsync(workflows, (async w => {
-          const x = await w.getPowerupProperty(workflowCode, triggerIfCode)
-          if (!x) {
-            return false
-          }
-          function isDescriptorAnswer() {
-            return focusedRem?.type === RemType.DESCRIPTOR && prevLineRichText.some(x => x.i === 's')
-          }
-          let f = eval(x);
-          return await f();
-        }))
-        const workflow = filteredWorkflows[0];
-        if (workflow) {
-          await plugin.editor.deleteCharacters(3, -1)
-          await runWorkflow(plugin, workflow, {}, {focusedRemId: focusedRem?._id, isCommandCallback: true})
-        }
-      }
+        {
+          name: 'model',
+          code: modelCode,
+          hidden: false,
+        },
+        {
+          name: 'temperature',
+          code: temperatureCode,
+          hidden: false,
+        },
+        {
+          name: 'stop',
+          code: stopCode,
+          hidden: false,
+        },
+        {
+          name: 'max tokens',
+          code: maxTokensCode,
+          hidden: false,
+        },
+        {
+          name: 'command name',
+          code: commandCode,
+          hidden: false,
+        },
+      ],
     }
   );
 
-  await plugin.app.registerCommand({
-    id: "test",
-    name: "Test",
-    description: "",
-    action: async () => {
-      const t = await plugin.window.openWidgetInPane("flow")
+  async function childify(parentRem: Rem, completions: string[]) {
+    for (const completion of completions) {
+      const childRem = await plugin.rem.createRem();
+      await childRem?.setText([completion]);
+      await childRem?.setParent(parentRem);
     }
-  })
+  }
+
+  const runPromptCommand = async () => {
+    const focusedRem = await plugin.focus.getFocusedRem();
+    if (!focusedRem) return;
+    const result = await runPrompt(plugin, focusedRem);
+    await childify(focusedRem, result);
+  };
 
   await plugin.app.registerCommand({
-    id: "branch",
-    name: "Branch",
-    description: "Creates a clone of the currently focused Rem as a sibling",
+    id: 'run-prompt',
+    name: 'Run Prompt',
+    action: () => runPromptCommand(),
+  });
+
+  await plugin.app.registerCommand({
+    id: 'generate-cdf',
+    name: 'Generate CDF',
     action: async () => {
-      const rem = await plugin.focus.getFocusedRem();
-      const idx = await rem?.positionAmongstSiblings();
-      if (!rem || idx == null) return;
-      const newRem = await plugin.rem.createRem();
-      await newRem?.setParent(rem.parent, idx + 1)
-      await newRem?.setText(rem.text);
-    }
-  })
+      const focusedRem = await plugin.focus.getFocusedRem();
+      if (!focusedRem) return;
+      await generate_cdf(plugin, focusedRem);
+    },
+  });
 
   await plugin.app.registerCommand({
-    id: "run-prompt",
-    name: "Run Prompt",
-    action: () => runPromptCommand(1),
-  })
+    id: 'generate-qas',
+    name: 'Generate QAs',
+    action: async () => {
+      const focusedRem = await plugin.focus.getFocusedRem();
+      if (!focusedRem) return;
+      await generate_qas(plugin, focusedRem);
+    },
+  });
 
-  await plugin.app.registerCommand({
-    id: "run-prompt-3",
-    name: "Run Prompt x3",
-    action: () => runPromptCommand(3),
-  })
+  // await plugin.app.registerCommand({
+  //   id: 'generate-cdf',
+  //   name: 'Generate Clozes',
+  //   action: async () => {
+  //     const focusedRem = await plugin.focus.getFocusedRem();
+  //     if (!focusedRem) return;
+  //     await generate_clozes(plugin, focusedRem);
+  //   },
+  // });
 
   await plugin.settings.registerStringSetting({
     id: apiKeyId,
     title: 'OpenAI API Key',
-    description: "Your personal OpenAI API key",
+    description: 'Your personal OpenAI API key',
     defaultValue: '',
   });
 
-  await plugin.app.registerWidget(
-    'generic_tutor',
-    WidgetLocation.RightSidebar,
-    {
-      dimensions: { height: "auto", width: "100%" },
-    }
-  )
+  await plugin.settings.registerStringSetting({
+    id: globalDefaultModelCode,
+    title: 'Default Completion Model',
+    defaultValue: 'text-davinci-002',
+  });
 
-  await plugin.app.registerWidget(
-    'completion_controls',
-    WidgetLocation.RightSideOfEditor,
-    {
-      dimensions: { height: 'auto', width: '100px' },
-      powerupFilter: completionPowerupCode,
-    }
-  );
+  await plugin.settings.registerNumberSetting({
+    id: globalDefaultMaxTokensCode,
+    title: 'Default Max Tokens',
+    defaultValue: 1000,
+  });
 
-  await plugin.app.registerWidget(
-    "get_args",
-    WidgetLocation.Popup,
-    {
-      dimensions: { height: 'auto', width: 'auto' },
-    }
-  );
+  await plugin.settings.registerNumberSetting({
+    id: globalDefaultTemperatureCode,
+    title: 'Default Temperature',
+    defaultValue: 0.7,
+  });
 
-  // await plugin.app.registerWidget(
-  //   "suggest_prompts",
-  //   WidgetLocation.DocumentBelowTitle,
-  //   {
-  //     dimensions: { height: 'auto', width: 'auto' },
-  // )
-
-  // await plugin.app.registerWidget(
-  //   "test_input",
-  //   WidgetLocation.UnderRemEditor,
-  //   {
-  //     dimensions: { height: 'auto', width: '100%' },
-  //     powerupFilter: promptPowerupCode,
-  //   }
-  // );
-
-  await plugin.app.registerWidget(
-    "flow",
-    WidgetLocation.Pane,
-    {
-      dimensions: { height: 'auto', width: '100%' },
-    }
-  );
-
-  plugin.track(async (reactivePlugin) => {
-    const pw = await reactivePlugin.powerup.getPowerupByCode(workflowCode)!;
-    const workflows = (await pw?.taggedRem()) || [];
-    for (const workflow of workflows) {
-      const name = await plugin.richText.toString(workflow.text);
+  plugin.track(async (rp) => {
+    const promptPowerup = await rp.powerup.getPowerupByCode(promptPowerupCode)!;
+    const promptRems = (await promptPowerup?.taggedRem()) || [];
+    for (const promptRem of promptRems) {
+      const name = await promptRem?.getPowerupProperty(promptPowerupCode, commandCode);
+      if (!name) continue;
       const action = async () => {
         const focusedRem = await plugin.focus.getFocusedRem();
-        const rem = await plugin.rem.findOne(workflow._id);
-        const firstPrompt = (await getWorkflowPrompts(rem!))[0];
-        const state = await useSelectionAsFirstParameter(plugin, firstPrompt);
-        if (!rem?.hasPowerup(workflowCode)) {
-          // TODO: auto un-register.
-          console.log("Not a workflow... Maybe you removed the powerup from the workflow rem?")
+        const rem = await plugin.rem.findOne(promptRem._id);
+        if (!rem || !focusedRem) {
           return;
         }
-        if (rem) {
-          await runWorkflow(plugin, rem, state, {isCommandCallback: true, focusedRemId: focusedRem?._id})
-        }
-      }
+        const result = await runPrompt(plugin, rem);
+        await childify(focusedRem, result);
+      };
       plugin.app.registerCommand({
-        id: workflow._id,
+        id: promptRem._id,
         name,
         action,
-      })
+      });
     }
-  })
+  });
 }
 
 async function onDeactivate(_: ReactRNPlugin) {}

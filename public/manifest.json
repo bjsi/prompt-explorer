@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
-  "id": "plugin_template",
-  "name": "Plugin Template",
-  "author": "remnote",
+  "id": "prompt_explorer",
+  "name": "Prompt Explorer",
+  "author": "Jamesb",
   "repoUrl": "https://github.com/bjsi/prompt-explorer",
   "version": {
     "major": 0,
