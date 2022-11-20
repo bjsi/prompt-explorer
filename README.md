@@ -3,6 +3,11 @@
 ## Features
 
 - Run GPT-3 prompts directly from RemNote.
+- Turn prompts into commands using the `Prompt` powerup.
+- Coming soon:
+  - Allow custom prompts to take parameters.
+  - Chain prompts into powerful workflows.
+  - Cool UI experiments.
 
 ## How to Use
 
@@ -11,12 +16,13 @@ NOTE: It isn't free to use GPT-3. The cost depends on your usage. Please sign up
 ### Builtin Prompts
 
 - Generate QA flashcards.
-- Generate concept-descriptor framework flashcards.
-- Generate cloze flashcards.
+- Generate CDF (Concept Descriptor Framework) flashcards
 
 ### Custom Prompts
 
-- /Run Prompt command
+- You can send any Rem's text to GPT-3 using the /Run Prompt command.
+- Tag Rem with the `Prompt` powerup and add the `command name` powerup slot to register the prompt as a command.
+- TODO: images and gifs
 
 ## Developers
 
