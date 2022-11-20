@@ -4,6 +4,7 @@ import {
   apiKeyId,
   globalDefaultMaxTokensCode,
   globalDefaultModelCode,
+  globalDefaultTemperatureCode,
   maxTokensCode,
   modelCode,
   promptPowerupCode,
@@ -14,7 +15,8 @@ import {
 async function getGlobalSettings(plugin: RNPlugin): Promise<CreateCompletionRequest> {
   const model =
     (await plugin.settings.getSetting<string>(globalDefaultModelCode)) || 'text-davinci-002';
-  const temperature = (await plugin.settings.getSetting<number>(globalDefaultModelCode)) || 0.7;
+  const temperature =
+    (await plugin.settings.getSetting<number>(globalDefaultTemperatureCode)) || 0.7;
   const max_tokens = (await plugin.settings.getSetting<number>(globalDefaultMaxTokensCode)) || 1000;
   return {
     model,

@@ -5,7 +5,7 @@ import { cleanOutput } from './text_utils';
 export const getPromptRichText = async (plugin: RNPlugin, rem: Rem) => {
   const firstRichTextEl = rem.text[0];
   const rt =
-    firstRichTextEl && '_id' in firstRichTextEl && firstRichTextEl._id
+    typeof firstRichTextEl == 'object' && '_id' in firstRichTextEl && firstRichTextEl._id
       ? (await plugin.rem.findOne(firstRichTextEl._id))!.text
       : rem.text;
   return await plugin.richText.trim(rt);
