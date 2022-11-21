@@ -1,14 +1,14 @@
-import { RNPlugin, SelectionType } from '@remnote/plugin-sdk';
+import { Rem, RNPlugin, SelectionType } from '@remnote/plugin-sdk';
 
-export const getPromptInput = async (plugin: RNPlugin) => {
+export const getPromptInput = async (plugin: RNPlugin, focusedRem: Rem) => {
   const sel = await plugin.editor.getSelection();
   let input: string | undefined;
-  if (!sel) {
-    const focusedRem = await plugin.focus.getFocusedRem();
-    if (!focusedRem) {
-      return;
+  if (sel && sel.type === SelectionType.Text) {
+    if (sel.range.start === sel.range.end) {
+      input = await plugin.richText.toString(focusedRem.text);
+    } else {
+      input = await plugin.richText.toString(sel.richText);
     }
-    input = await plugin.richText.toString(focusedRem.text);
   }
   //   } else {
   // if (sel?.type === SelectionType.Rem) {
@@ -19,8 +19,5 @@ export const getPromptInput = async (plugin: RNPlugin) => {
   //       )
   //     )
   //   ).join('\n');
-  else if (sel?.type === SelectionType.Text) {
-    input = await plugin.richText.toString(sel.richText);
-  }
   return input;
 };
