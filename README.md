@@ -43,7 +43,7 @@ NOTE: It isn't free to use GPT-3. The exact cost depends on your usage. Please s
 
 ### Prompt Settings
 
-- For custom prompts tagged with the `Prompt` powerup, you can add powerup slots to determine override the global completion parameters.
+- For custom prompts tagged with the `Prompt` powerup, you can add powerup slots to override global completion parameters.
 
 ![Custom Prompt Command](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/rem-params.png)
 
