@@ -55,7 +55,7 @@ const generateClozeData = (gptResponse: string, sourceText: string) => {
 };
 
 export const generate_clozes = async (plugin: RNPlugin, sourceRem: Rem) => {
-  const input = await getPromptInput(plugin);
+  const input = await getPromptInput(plugin, sourceRem);
   if (!input) {
     return;
   }

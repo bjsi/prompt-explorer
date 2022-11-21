@@ -24,7 +24,7 @@ const generateQuestionAnswerData = (text: string) => {
 };
 
 export async function generate_qas(plugin: RNPlugin, sourceRem: Rem) {
-  const input = await getPromptInput(plugin);
+  const input = await getPromptInput(plugin, sourceRem);
   if (!input) {
     return;
   }
