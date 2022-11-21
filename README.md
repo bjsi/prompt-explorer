@@ -35,6 +35,18 @@ NOTE: It isn't free to use GPT-3. The exact cost depends on your usage. Please s
 
 ![Custom Prompt Command](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/custom-prompt-cmd.gif)
 
+## Settings
+
+### Global Settings
+
+- You can set some global GPT-3 completion parameters in the plugin settings page (eg. model, temperature...)
+
+### Prompt Settings
+
+- For custom prompts tagged with the `Prompt` powerup, you can add powerup slots to determine override the global completion parameters.
+
+![Custom Prompt Command](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/rem-params.png)
+
 ## Developers
 
 The `main` branch is for stuff which is already released into the plugin available in the plugin marketplace. The `dev` branch contains some much cooler experimental features which will gradually make their way into the `main` branch.
