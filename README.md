@@ -32,8 +32,14 @@ NOTE: It isn't free to use GPT-3. The exact cost depends on your usage. Please s
 
 - You can send any Rem's text to GPT-3 using the /Run Prompt command.
 - Tag Rem with the `Prompt` powerup and add the `command name` powerup slot to register the prompt as a command.
+- How to add the command name slot:
+
+![Command Name Slot](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/commandname.gif)
+
+- Example:
 
 ![Custom Prompt Command](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/custom-prompt-cmd.gif)
+
 
 ## Settings
 
