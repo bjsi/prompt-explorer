@@ -2,15 +2,16 @@ import { Rem, RNPlugin, SetRemType } from '@remnote/plugin-sdk';
 import { generateCDCardsPrompt } from '../prompts/cdf';
 import { completeTextPrompt } from './gpt';
 import { getPromptInput } from './input';
-import { cleanOutput, dequote } from './text_utils';
+import { cleanOutput, dequote, trim } from './text_utils';
+import * as R from 'remeda';
 
 const generate_cdf_data = (text: string) => {
   const splitlines = text.split('\n').flatMap((x) => x.trim());
   const descriptorsAndValues: { descriptor: string; value: string }[] = splitlines.map((x) => {
     // not ideal
     const split = x.split(' = ');
-    const descriptor = split[0].trim();
-    let value = dequote(split[1].trim());
+    const descriptor = R.pipe(split[0], trim, dequote);
+    let value = R.pipe(split[1], dequote, trim);
     return { descriptor, value };
   });
   return descriptorsAndValues;
@@ -26,7 +27,6 @@ export async function generate_cdf(plugin: RNPlugin, sourceRem: Rem) {
     plugin.app.toast('Failed to generate CDF cards.');
     return;
   }
-  completion = 'definition = "' + completion;
   const cleanCompletion = cleanOutput(completion);
   const descriptorsAndValues = generate_cdf_data(cleanCompletion.join('\n'));
   for (const { descriptor, value } of descriptorsAndValues) {

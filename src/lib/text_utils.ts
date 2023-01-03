@@ -16,6 +16,8 @@ export const splitlines = (str: string): string[] => {
   return str.split(/\r?\n/);
 };
 
+export const trim = (s: string) => s.trim();
+
 export const unempty = (str: string): boolean => {
   return !!str && str != null;
 };
@@ -24,7 +26,9 @@ export const cleanOutput = (str: string): string[] => {
   return R.pipe(
     str,
     splitlines,
+    R.map(trim),
     R.map(dehyphenate),
+    R.map(trim),
     R.map(dequote),
     R.map(denumerate),
     R.filter(unempty)
