@@ -115,7 +115,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   await plugin.settings.registerStringSetting({
     id: globalDefaultModelCode,
     title: 'Default Completion Model',
-    defaultValue: 'text-davinci-002',
+    defaultValue: 'text-davinci-003',
   });
 
   await plugin.settings.registerNumberSetting({
