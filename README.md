@@ -28,6 +28,8 @@ NOTE: It isn't free to use GPT-3. The exact cost depends on your usage. Please s
 
 ![Generate CDF (Concept Descriptor Framework) Flashcards command](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/generate-cdf.gif)
 
+I made a change recently to make the prompts work for other languages. Let me know if you notice any cases where it doesn't work.
+
 ### Custom Prompts
 
 - You can send any Rem's text to GPT-3 using the /Run Prompt command.
