@@ -7,10 +7,10 @@
   "version": {
     "major": 0,
     "minor": 0,
-    "patch": 4
+    "patch": 5
   },
   "theme": [],
-  "enableOnMobile": false,
+  "enableOnMobile": true,
   "description": "Run GPT-3 prompts directly from RemNote",
   "requestNative": false,
   "requiredScopes": [
