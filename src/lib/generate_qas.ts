@@ -5,7 +5,7 @@ import { completeTextPrompt } from './gpt';
 import { getPromptInput } from './input';
 
 const generateQuestionAnswerData = (text: string) => {
-  const splitlines = text.split('\n').filter((x) => x.startsWith('Q:') || x.startsWith('A:'));
+  const splitlines = text.split('\r?\n').filter((x) => x.startsWith('Q:') || x.startsWith('A:'));
   const qas: { question: string; answer: string }[] = R.compact(
     splitlines.map((line, idx) => {
       if (idx % 2 === 0) {
@@ -25,6 +25,7 @@ const generateQuestionAnswerData = (text: string) => {
 
 export async function generate_qas(plugin: RNPlugin, sourceRem: Rem) {
   const input = await getPromptInput(plugin, sourceRem);
+  debugger;
   if (!input) {
     return;
   }
@@ -37,7 +38,7 @@ export async function generate_qas(plugin: RNPlugin, sourceRem: Rem) {
   res = 'Q:' + res;
   const qas = generateQuestionAnswerData(res);
   if (qas.length === 0) {
-    plugin.app.toast('Failed to generate cards.');
+    plugin.app.toast('Failed to generate cards. Number of QAs was 0.');
     return;
   }
 

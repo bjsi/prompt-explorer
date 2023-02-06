@@ -16,6 +16,7 @@ import '../style.css';
 import '../App.css';
 import { generate_qas } from '../lib/generate_qas';
 import { generate_cdf } from '../lib/generate_cdf';
+import { setLoading } from '../lib/loading';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.app.registerPowerup(
@@ -81,7 +82,14 @@ async function onActivate(plugin: ReactRNPlugin) {
     action: async () => {
       const focusedRem = await plugin.focus.getFocusedRem();
       if (!focusedRem) return;
-      await generate_cdf(plugin, focusedRem);
+      try {
+        await setLoading(plugin, focusedRem._id, true);
+        await generate_cdf(plugin, focusedRem);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        await setLoading(plugin, focusedRem._id, false);
+      }
     },
   });
 
@@ -91,7 +99,14 @@ async function onActivate(plugin: ReactRNPlugin) {
     action: async () => {
       const focusedRem = await plugin.focus.getFocusedRem();
       if (!focusedRem) return;
-      await generate_qas(plugin, focusedRem);
+      try {
+        await setLoading(plugin, focusedRem._id, true);
+        await generate_qas(plugin, focusedRem);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        await setLoading(plugin, focusedRem._id, false);
+      }
     },
   });
 

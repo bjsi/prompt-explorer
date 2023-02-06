@@ -81,11 +81,24 @@ export async function query(plugin: RNPlugin, params = {}) {
   };
   try {
     const response = await fetch('https://api.openai.com/v1/completions', requestOptions);
+    if (response.status !== 200) {
+      if (response.status === 401 || response.status === 404) {
+        plugin.app.toast('Your API key is invalid. Go to the settings page to fix it.');
+        return undefined;
+      } else if (response.status === 429) {
+        plugin.app.toast(
+          'You hit the openAI rate limit, or your max monthly spend. Try again later.'
+        );
+        return undefined;
+      }
+    }
     const data = await response.json();
-    return data?.choices?.[0]?.text as string | undefined;
+    const result = data?.choices?.[0]?.text as string | undefined;
+    console.log('GPT-3 result:', result);
+    return result;
   } catch (e) {
     console.error(e);
-    plugin.app.toast('Error querying GPT-3 API');
+    plugin.app.toast(`Error querying GPT-3 API: ${e}`);
   }
 }
 
