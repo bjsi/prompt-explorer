@@ -1,6 +1,6 @@
 export const generateCDCardsPrompt = (
   concept: string
-) => `Create a detailed list of fields and values for the following OOP classes, excluding "types of" and "first use" fields.
+) => `Create a detailed list of fields and values for the following OOP classes, excluding "types of" and "first use" fields. Write in the language of the last class name in this prompt.
   
 Use the following format:
 class \${CLASS NAME}:
