@@ -7,7 +7,7 @@ ${text
   .filter((x) => !!x && x != null)
   .join('\n')}
 
-Create five questions and keyword answers based on the TEXT. Use the following format for each question answer pair. Use the same language as the text:
+Create five questions and keyword answers based on the TEXT. Write both questions and answers in the language of the string after TEXT: . Use the following format for each question answer pair:
 Q: \${QUESTION}
 A: \${ANSWER}
 
