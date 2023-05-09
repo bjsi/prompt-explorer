@@ -33,7 +33,7 @@ I made a change recently to make the prompts work for other languages. Let me kn
 ### Custom Prompts
 
 - You can send any Rem's text to GPT-3 using the /Run Prompt command.
-- Tag Rem with the `Prompt` powerup and add the `command name` powerup slot to register the prompt as a command.
+- Use the `Prompt` command in the Omnibar to tag Rem with the `Prompt` powerup and add the `command name` powerup slot to register the prompt as a command.
 - How to add the command name slot:
 
 ![Command Name Slot](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/commandname.gif)
@@ -41,7 +41,6 @@ I made a change recently to make the prompts work for other languages. Let me kn
 - Example:
 
 ![Custom Prompt Command](https://raw.githubusercontent.com/bjsi/prompt-explorer/main/img/custom-prompt-cmd.gif)
-
 
 ## Settings
 

@@ -145,6 +145,17 @@ async function onActivate(plugin: ReactRNPlugin) {
     defaultValue: 0.7,
   });
 
+  await plugin.app.registerCommand({
+    id: 'prompt',
+    name: 'Prompt',
+    description: 'Add the Prompt powerup',
+    async action() {
+      const focusedRem = await plugin.focus.getFocusedRem();
+      if (!focusedRem) return;
+      await focusedRem.addPowerup(promptPowerupCode);
+    },
+  });
+
   plugin.track(async (rp) => {
     const promptPowerup = await rp.powerup.getPowerupByCode(promptPowerupCode)!;
     const promptRems = (await promptPowerup?.taggedRem()) || [];
