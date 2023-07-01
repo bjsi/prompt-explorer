@@ -1,0 +1,22 @@
+{
+  "manifestVersion": 1,
+  "id": "prompt_explorer",
+  "name": "Prompt Explorer",
+  "author": "Jamesb",
+  "repoUrl": "https://github.com/CanberkYuksel/prompt-explorer",
+  "version": {
+    "major": 0,
+    "minor": 0,
+    "patch": 8
+  },
+  "theme": [],
+  "enableOnMobile": true,
+  "description": "Run GPT-3.5 prompts directly from RemNote",
+  "requestNative": false,
+  "requiredScopes": [
+    {
+      "type": "All",
+      "level": "ReadCreateModifyDelete"
+    }
+  ]
+}
