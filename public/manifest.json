@@ -3,7 +3,7 @@
   "id": "prompt_explorer",
   "name": "Prompt Explorer",
   "author": "Jamesb",
-  "repoUrl": "https://github.com/bjsi/prompt-explorer",
+  "repoUrl": "https://github.com/CanberkYuksel/prompt-explorer",
   "version": {
     "major": 0,
     "minor": 0,
@@ -11,7 +11,7 @@
   },
   "theme": [],
   "enableOnMobile": true,
-  "description": "Run GPT-3 prompts directly from RemNote",
+  "description": "Run GPT-3.5 prompts directly from RemNote",
   "requestNative": false,
   "requiredScopes": [
     {
