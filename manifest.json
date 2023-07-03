@@ -3,11 +3,11 @@
   "id": "prompt_explorer",
   "name": "Prompt Explorer",
   "author": "Jamesb",
-  "repoUrl": "https://github.com/CanberkYuksel/prompt-explorer",
+  "repoUrl": "https://github.com/bjsi/prompt-explorer",
   "version": {
     "major": 0,
     "minor": 0,
-    "patch": 8
+    "patch": 9
   },
   "theme": [],
   "enableOnMobile": true,
