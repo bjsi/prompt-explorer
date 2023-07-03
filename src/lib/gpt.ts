@@ -14,7 +14,7 @@ import {
 
 async function getGlobalSettings(plugin: RNPlugin): Promise<CreateCompletionRequest> {
   const model =
-    (await plugin.settings.getSetting<string>(globalDefaultModelCode)) || 'text-davinci-002';
+    (await plugin.settings.getSetting<string>(globalDefaultModelCode)) || 'gpt-3.5-turbo';
   const temperature =
     (await plugin.settings.getSetting<number>(globalDefaultTemperatureCode)) || 0.7;
   const max_tokens = (await plugin.settings.getSetting<number>(globalDefaultMaxTokensCode)) || 1000;
@@ -80,7 +80,7 @@ export async function query(plugin: RNPlugin, params = {}) {
     body: JSON.stringify(params),
   };
   try {
-    const response = await fetch('https://api.openai.com/v1/completions', requestOptions);
+    const response = await fetch('https://api.openai.com/v1/chat/completions', requestOptions);
     if (response.status !== 200) {
       if (response.status === 401 || response.status === 404) {
         plugin.app.toast('Your API key is invalid. Go to the settings page to fix it.');
