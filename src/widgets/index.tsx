@@ -64,10 +64,18 @@ async function onActivate(plugin: ReactRNPlugin) {
   }
 
   const runPromptCommand = async () => {
+
     const focusedRem = await plugin.focus.getFocusedRem();
     if (!focusedRem) return;
-    const result = await runPrompt(plugin, focusedRem);
-    await childify(focusedRem, result);
+    try {
+      await setLoading(plugin, focusedRem._id, true);
+      const result = await runPrompt(plugin, focusedRem);
+      await childify(focusedRem, result);
+    }catch (e) {
+      console.log(e);
+    } finally {
+      await setLoading(plugin, focusedRem._id, false);
+    }
   };
 
   await plugin.app.registerCommand({
@@ -130,7 +138,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   await plugin.settings.registerStringSetting({
     id: globalDefaultModelCode,
     title: 'Default Completion Model',
-    defaultValue: 'text-davinci-003',
+    defaultValue: 'gpt-3.5-turbo',
   });
 
   await plugin.settings.registerNumberSetting({
@@ -142,7 +150,7 @@ async function onActivate(plugin: ReactRNPlugin) {
   await plugin.settings.registerNumberSetting({
     id: globalDefaultTemperatureCode,
     title: 'Default Temperature',
-    defaultValue: 0.7,
+    defaultValue: 1,
   });
 
   plugin.track(async (rp) => {
