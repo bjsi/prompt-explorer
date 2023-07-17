@@ -80,6 +80,7 @@ export async function query(plugin: RNPlugin, params = {}) {
     body: JSON.stringify(params),
   };
   try {
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', requestOptions);
     if (response.status !== 200) {
       if (response.status === 401 || response.status === 404) {
@@ -93,7 +94,7 @@ export async function query(plugin: RNPlugin, params = {}) {
       }
     }
     const data = await response.json();
-    const result = data?.choices?.[0]?.text as string | undefined;
+    const result = data?.choices?.[0]?.message.content as string | undefined;
     console.log('GPT-3 result:', result);
     return result;
   } catch (e) {
@@ -104,9 +105,9 @@ export async function query(plugin: RNPlugin, params = {}) {
 
 export async function completeRemPrompt(plugin: RNPlugin, prompt: string, promptRem: Rem) {
   const opts: CreateCompletionRequest = {
-    prompt,
     ...(await getGlobalSettings(plugin)),
     ...(await getSettingsFromRem(promptRem)),
+    ...{"messages":[{"role":'user',"content":prompt}]},
   };
   return await query(plugin, opts);
 }
@@ -117,7 +118,7 @@ export async function completeTextPrompt(
   _opts: Partial<CreateCompletionRequest> = {}
 ) {
   const opts: CreateCompletionRequest = {
-    prompt,
+    ...{"messages":[{"role":'user',"content":prompt}]},
     ...(await getGlobalSettings(plugin)),
     ..._opts,
   };
