@@ -11,12 +11,15 @@ import {
   globalDefaultMaxTokensCode,
   globalDefaultTemperatureCode,
 } from '../lib/consts';
-import { runPromptRem as runPrompt } from '../lib/prompt';
+import { runPromptRem as runPrompt, runPromptRem } from '../lib/prompt';
 import '../style.css';
 import '../App.css';
 import { generate_qas } from '../lib/generate_qas';
 import { generate_cdf } from '../lib/generate_cdf';
 import { setLoading } from '../lib/loading';
+import { runMain } from 'module';
+// Minha importação
+import { completeTextPrompt } from '../lib/gpt';
 
 async function onActivate(plugin: ReactRNPlugin) {
   await plugin.app.registerPowerup(
@@ -117,6 +120,71 @@ async function onActivate(plugin: ReactRNPlugin) {
       }
     },
   });
+
+  // ----INÍCIO MEU CÓDIGO------
+  /*
+     async function addTextToFucusedRem() {
+      const focusedRem = await plugin.focus.getFocusedRem();
+      const textoFocado = focusedRem.text
+
+      // INTEGRAÇÃO COM O CHAT GPT
+      //const promptText = `Baseado no seguinte texto: "${focusedRem.text}", crie uma pergunta que poderia ser respondida por ele.`;
+      //const gpt3Responses = await runPrompt(plugin, promptText);
+      //const gpt3Response = gpt3Responses.length > 0 ? gpt3Responses[0] : "";
+      
+
+      // Parece que eu tinha que passar um array como elemento, por isso quaneu passava somente uma string não dava certo o código
+      // Dessa forma aqui a formatação original foi mantida 
+      const backTextArray = typeof textoFocado === 'string' ? [textoFocado] : textoFocado;
+
+      await focusedRem.setText([runPromptCommand]);
+      await focusedRem.setBackText(backTextArray);
+  
+      console.log('o texto focado é', textoFocado);
+      console.log('o texto da pergunta é:', backTextArray)
+    }
+  */  
+
+
+    async function generateQuestionForFocusedRem() {
+      const focusedRem = await plugin.focus.getFocusedRem();
+      if (!focusedRem) return;
+      const textoFocado = focusedRem.text;
+      const textoFocadoString = await plugin.richText.toString(focusedRem.text)
+      if (!textoFocado) return;
+      const prompt = `baseado na seguinte informação: "${textoFocadoString}", gere uma pergunta como se estivesse fazendo um flash card.`;
+      const generatedQuestion = await completeTextPrompt(plugin, prompt);
+      return generatedQuestion;
+    }
+
+    async function addTextToFucusedRem() {
+      const focusedRem = await plugin.focus.getFocusedRem();
+      const textoFocado = focusedRem.text;
+      console.log(textoFocado)
+      const backTextArray = typeof textoFocado === 'string' ? [textoFocado] : textoFocado;
+
+      const generatedQuestion = await generateQuestionForFocusedRem(plugin);
+      
+      if (generatedQuestion) {
+        await focusedRem.setText([generatedQuestion]);
+        await focusedRem.setBackText(backTextArray);
+      } else {
+        console.error("Failed to generate a question using GPT-3.");
+      }
+    }
+
+
+
+
+    // Registra o comando quando apertar o ctrl K
+    await plugin.app.registerCommand({
+      id: 'add-texto',
+      name: 'Add Texto',
+      action: () => addTextToFucusedRem(),
+    })
+  // -----FIM DO MEU CÓDIGO------
+
+
 
   // await plugin.app.registerCommand({
   //   id: 'generate-cdf',
