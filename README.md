@@ -13,6 +13,10 @@
 
 NOTE: It isn't free to use GPT-3. The exact cost depends on your usage. Please sign up for an [OpenAI API key](https://openai.com/api/) and paste it into the "API Key" settings box in the plugin settings page.
 
+NOTE: You must enable billing in the https://platform.openai.com/ webpage and create an API key. 
+
+NOTE: There is a difference between the key available in the ChatGPT settings verses in the openai API key. The ChatGPT api key in settings is not compatible with this plugin. 
+
 ## Prompts
 
 - Either the currently selected range of text or the currently focused Rem's text will be used as input.
